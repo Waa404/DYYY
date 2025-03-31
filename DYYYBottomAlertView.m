@@ -61,7 +61,7 @@
         // 创建弹窗内容视图
         _alertView = [[UIView alloc] init];
         _alertView.backgroundColor = [UIColor whiteColor];
-        _alertView.layer.cornerRadius = 16.0;
+        _alertView.layer.cornerRadius = 20.0;
         _alertView.layer.masksToBounds = YES;
         _alertView.clipsToBounds = YES;
         
@@ -75,7 +75,7 @@
         
         // 设置弹窗的大小和位置（考虑底部安全区域）
         CGFloat alertWidth = self.bounds.size.width;
-        CGFloat alertHeight = 150 + bottomSafeAreaHeight;
+        CGFloat alertHeight = 200 + bottomSafeAreaHeight;
         _alertView.frame = CGRectMake(0, self.bounds.size.height, alertWidth, alertHeight);
         
         // 创建标题
@@ -90,7 +90,7 @@
         _messageLabel.text = message;
         _messageLabel.textAlignment = NSTextAlignmentCenter;
         _messageLabel.numberOfLines = 0;
-        _messageLabel.font = [UIFont systemFontOfSize:15];
+        _messageLabel.font = [UIFont systemFontOfSize:17];
         [_alertView addSubview:_messageLabel];
     
         
@@ -99,8 +99,9 @@
         [_cancelButton setTitle:@"取消" forState:UIControlStateNormal];
         [_cancelButton addTarget:self action:@selector(cancelButtonTapped) forControlEvents:UIControlEventTouchUpInside];
         _cancelButton.backgroundColor = [UIColor colorWithRed:242.0/255.0 green:239.0/255.0 blue:242.0/255.0 alpha:1.0];
-        _cancelButton.layer.cornerRadius = 12.0;
+        _cancelButton.layer.cornerRadius = 14.0;
         [_cancelButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+        _cancelButton.font = [UIFont boldSystemFontOfSize:15];
         [_alertView addSubview:_cancelButton];
         
         // 创建确认按钮
@@ -108,19 +109,20 @@
         [_confirmButton setTitle:@"确定" forState:UIControlStateNormal];
         [_confirmButton addTarget:self action:@selector(confirmButtonTapped) forControlEvents:UIControlEventTouchUpInside];
         _confirmButton.backgroundColor = [UIColor colorWithRed:253.0/255.0 green:40.0/255.0 blue:77.0/255.0 alpha:1.0]; // fd284d
-        _confirmButton.layer.cornerRadius = 12.0;
+        _confirmButton.layer.cornerRadius = 14.0;
         [_confirmButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        _confirmButton.font = [UIFont boldSystemFontOfSize:15];
         [_alertView addSubview:_confirmButton];
         
         // 设置布局（考虑底部安全区域）
-        CGFloat padding = 12.0; 
-        CGFloat buttonHeight = 44.0; 
+        CGFloat padding = 30.0; 
+        CGFloat buttonHeight = 48.0; 
         
-        _titleLabel.frame = CGRectMake(padding, padding, alertWidth - padding * 2, 22);
-        _messageLabel.frame = CGRectMake(padding, CGRectGetMaxY(_titleLabel.frame) + padding/3, alertWidth - padding * 2, 40); 
+        _titleLabel.frame = CGRectMake(padding, padding / 2, alertWidth - padding * 2, 22);
+        _messageLabel.frame = CGRectMake(padding, alertHeight / 2 - buttonHeight, alertWidth - padding * 2, 40); 
         
         CGFloat buttonWidth = (alertWidth - padding * 3) / 2;
-        _cancelButton.frame = CGRectMake(padding, CGRectGetMaxY(_messageLabel.frame) + padding, buttonWidth, buttonHeight); 
+        _cancelButton.frame = CGRectMake(padding, alertHeight - buttonHeight - padding, buttonWidth, buttonHeight); 
         _confirmButton.frame = CGRectMake(CGRectGetMaxX(_cancelButton.frame) + padding, _cancelButton.frame.origin.y, buttonWidth, buttonHeight);
     }
     return self;
