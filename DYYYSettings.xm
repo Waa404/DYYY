@@ -481,6 +481,8 @@ static void showUserAgreementAlert() {
                 NSArray *appearanceSettings = @[
                     @{@"identifier": @"DYYYEnableDanmuColor", @"title": @"启用弹幕改色", @"detail": @"", @"cellType": @6, @"imageName": @"ic_dansquare_outlined_20"},
                     @{@"identifier": @"DYYYdanmuColor", @"title": @"自定弹幕颜色", @"detail": @"十六进制", @"cellType": @26, @"imageName": @"ic_dansquarenut_outlined_20"},
+                    @{@"identifier": @"DYYYEnableCommentColor", @"title": @"启用评论改色", @"detail": @"", @"cellType": @6, @"imageName": @"ic_comment_outlined_20"},
+                    @{@"identifier": @"DYYYCommentColor", @"title": @"自定评论颜色", @"detail": @"十六进制", @"cellType": @26, @"imageName": @"ic_msg_outlined_20"},
                 ];
                 
                 for (NSDictionary *dict in appearanceSettings) {
@@ -707,7 +709,7 @@ static void showUserAgreementAlert() {
                     @{@"identifier": @"DYYYtopbartransparent", @"title": @"设置顶栏透明", @"detail": @"0-1小数", @"cellType": @26, @"imageName": @"ic_module_outlined_20"},
                     @{@"identifier": @"DYYYGlobalTransparency", @"title": @"设置全局透明", @"detail": @"0-1小数", @"cellType": @26, @"imageName": @"ic_eye_outlined_20"},
                     @{@"identifier": @"DYYYisEnableCommentBlur", @"title": @"评论区毛玻璃", @"detail": @"", @"cellType": @6, @"imageName": @"ic_comment_outlined_20"}, 
-                    @{@"identifier": @"DYYYCommentBlurTransparent", @"title": @"毛玻璃透明度", @"detail": @"0-1小数", @"cellType": @26, @"imageName": @"ic_eye_outlined_20"}      
+                    @{@"identifier": @"DYYYCommentBlurTransparent", @"title": @"毛玻璃透明度", @"detail": @"0-1小数", @"cellType": @26, @"imageName": @"ic_eye_outlined_20"},      
                 ];
                 
                 for (NSDictionary *dict in transparencySettings) {
@@ -1491,6 +1493,11 @@ static void showUserAgreementAlert() {
         BOOL isEnabled = getUserDefaults(@"DYYYEnableDanmuColor");
         item.isEnable = isEnabled;
     } 
+    else if ([item.identifier isEqualToString:@"DYYYCommentColor"]) {
+        // 评论颜色设置依赖于评论改色开关
+        BOOL isEnabled = getUserDefaults(@"DYYYEnableCommentColor");
+        item.isEnable = isEnabled;
+    }
     else if ([item.identifier isEqualToString:@"DYYYCommentBlurTransparent"]) {
         // 毛玻璃透明度依赖于评论区毛玻璃开关
         BOOL isEnabled = getUserDefaults(@"DYYYisEnableCommentBlur");
@@ -1549,6 +1556,10 @@ static void showUserAgreementAlert() {
     // 处理冲突和依赖关系逻辑
     if ([identifier isEqualToString:@"DYYYEnableDanmuColor"]) {
         // 更新对应的弹幕颜色设置的启用状态
+        [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
+    }
+    else if ([identifier isEqualToString:@"DYYYEnableCommentColor"]) {
+        // 更新对应的评论颜色设置的启用状态
         [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
     }
     else if ([identifier isEqualToString:@"DYYYisEnableCommentBlur"]) {
@@ -1615,6 +1626,9 @@ static void showUserAgreementAlert() {
             
             // 更新依赖项状态
             if ([identifier isEqualToString:@"DYYYEnableDanmuColor"] && [item.identifier isEqualToString:@"DYYYdanmuColor"]) {
+                item.isEnable = [value boolValue];
+            }
+            else if ([identifier isEqualToString:@"DYYYEnableCommentColor"] && [item.identifier isEqualToString:@"DYYYCommentColor"]) {
                 item.isEnable = [value boolValue];
             }
             else if ([identifier isEqualToString:@"DYYYisEnableCommentBlur"] && [item.identifier isEqualToString:@"DYYYCommentBlurTransparent"]) {
