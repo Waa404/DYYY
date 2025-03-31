@@ -1037,10 +1037,25 @@
     %orig;
 
     UIView *superview = self.superview;
-
     if ([superview isKindOfClass:NSClassFromString(@"AWEBaseElementView")]) {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCancelMute"]) {
+        BOOL hideCancelMute = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCancelMute"];
+        BOOL hideMusicButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMusicButton"];
+
+        if (hideCancelMute && hideMusicButton) {
+            [superview removeFromSuperview];
+        } else if (hideCancelMute) {
             self.hidden = YES;
+        }
+    }
+}
+
+- (void)willMoveToSuperview:(UIView *)newSuperview {
+    %orig;
+
+    if (newSuperview == nil && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMusicButton"]) {
+        UIView *superview = self.superview;
+        if ([superview isKindOfClass:NSClassFromString(@"AWEBaseElementView")]) {
+            [superview removeFromSuperview];
         }
     }
 }
@@ -1436,8 +1451,7 @@
 
     if ([accessibilityLabel isEqualToString:@"音乐详情"]) {
         if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMusicButton"]) {
-            [self removeFromSuperview];
-            return;
+            self.alpha = 0;
         }
     }
 }
