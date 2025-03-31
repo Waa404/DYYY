@@ -585,24 +585,63 @@
     %orig;
     if ([self.subviews count] == 2) return;
     
+    // 获取 enableEnterProfile 属性来判断是否是主页
     id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
     BOOL isHome = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
-    if (!isHome) return; 
-
+    
+    // 检查是否在作者主页
+    BOOL isAuthorProfile = NO;
+    UIResponder *responder = self;
+    while ((responder = [responder nextResponder])) {
+        if ([NSStringFromClass([responder class]) containsString:@"UserHomeViewController"] ||
+            [NSStringFromClass([responder class]) containsString:@"ProfileViewController"]) {
+            isAuthorProfile = YES;
+            break;
+        }
+    }
+    
+    // 如果不是主页也不是作者主页，直接返回
+    if (!isHome && !isAuthorProfile) return;
+    
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:[UIView class]]) {
             UIView *nextResponder = (UIView *)subview.nextResponder;
-            if ([nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+            
+            // 处理主页的情况
+            if (isHome && [nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
                 UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
                 if (![awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
-                    return;
+                    continue;
+                }
+                
+                CGRect frame = subview.frame;
+                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+                    frame.size.height = subview.superview.frame.size.height - 83;
+                    subview.frame = frame;
                 }
             }
-            
-            CGRect frame = subview.frame;
-            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-                frame.size.height = subview.superview.frame.size.height - 83;
-                subview.frame = frame;
+            // 处理作者主页的情况
+            else if (isAuthorProfile) {
+                // 检查是否是作品图片
+                BOOL isWorkImage = NO;
+                
+                // 可以通过检查子视图、标签或其他特性来确定是否是作品图片
+                for (UIView *childView in subview.subviews) {
+                    if ([NSStringFromClass([childView class]) containsString:@"ImageView"] ||
+                        [NSStringFromClass([childView class]) containsString:@"ThumbnailView"]) {
+                        isWorkImage = YES;
+                        break;
+                    }
+                }
+                
+                if (isWorkImage) {
+                    // 修复作者主页作品图片上移问题
+                    CGRect frame = subview.frame;
+                    // 这里可以根据需要调整位置
+                    // 例如，如果图片上移了，可以将其下移
+                    frame.origin.y += 83; // 假设需要下移83像素
+                    subview.frame = frame;
+                }
             }
         }
     }
@@ -830,6 +869,8 @@
     BOOL shouldFilterLowLikes = NO;
     BOOL shouldFilterKeywords = NO;
     
+    BOOL shouldFilterTime = NO;
+
     // 获取用户设置的需要过滤的关键词
     NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"];
     NSArray *keywordsList = nil;
@@ -883,9 +924,21 @@
                 }
             }
         }
+        
+        // 过滤视频发布时间
+        long long currentTimestamp = (long long)[[NSDate date] timeIntervalSince1970];
+        NSInteger daysThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfiltertimelimit"];
+        if (daysThreshold > 0) {
+            NSTimeInterval videoTimestamp = [self.createTime doubleValue]; 
+            if (videoTimestamp > 0) {
+                NSTimeInterval threshold = daysThreshold * 86400.0; 
+                NSTimeInterval current = (NSTimeInterval)currentTimestamp; 
+                NSTimeInterval timeDifference = current - videoTimestamp;
+                shouldFilterTime = (timeDifference > threshold);
+            }
+        }
     }
-    
-    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterLowLikes || shouldFilterKeywords) ? nil : orig;
+    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterTime) ? nil : orig;
 }
 
 - (id)init {
@@ -901,6 +954,8 @@
     
     BOOL shouldFilterLowLikes = NO;
     BOOL shouldFilterKeywords = NO;
+
+    BOOL shouldFilterTime = NO;
     
     // 获取用户设置的需要过滤的关键词
     NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"];
@@ -912,7 +967,7 @@
     
     NSInteger filterLowLikesThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfilterLowLikes"];
         
-    // 只有当shareRecExtra不为空时才过滤点赞量低的视频和关键词
+    // 只有当shareRecExtra不为空时才过滤
     if (self.shareRecExtra && ![self.shareRecExtra isEqual:@""]) {
         // 过滤低点赞量视频
         if (filterLowLikesThreshold > 0) {
@@ -955,9 +1010,22 @@
                 }
             }
         }
+        
+        // 过滤视频发布时间
+        long long currentTimestamp = (long long)[[NSDate date] timeIntervalSince1970];
+        NSInteger daysThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfiltertimelimit"];
+        if (daysThreshold > 0) {
+            NSTimeInterval videoTimestamp = [self.createTime doubleValue]; 
+            if (videoTimestamp > 0) {
+                NSTimeInterval threshold = daysThreshold * 86400.0; 
+                NSTimeInterval current = (NSTimeInterval)currentTimestamp; 
+                NSTimeInterval timeDifference = current - videoTimestamp;
+                shouldFilterTime = (timeDifference > threshold);
+            }
+        }
     }
     
-    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterLowLikes || shouldFilterKeywords) ? nil : orig;
+    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterTime) ? nil : orig;
 }
 
 - (bool)preventDownload {
@@ -2184,14 +2252,44 @@
 }
 
 %end
+// 隐藏视频滑条 
+%hook AWEStoryProgressSlideView 
+ 
+- (void)layoutSubviews {
+    %orig;
+    
+    // 1.判断是否启用隐藏 
+    BOOL shouldHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideStoryProgressSlide"];
+    if (!shouldHide) return;
+    
+    // 2.精准定位目标视图（核心修改）
+    __block UIView *targetView = nil;
+    [self.subviews enumerateObjectsUsingBlock:^(__kindof UIView * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        // 通过特征识别进度条（可结合类名/tag/尺寸等）
+        if ([obj isKindOfClass:NSClassFromString(@"UISlider")] || obj.frame.size.height < 5) {
+            targetView = obj.superview; // 通常进度条容器才是需要隐藏的 
+            *stop = YES;
+        }
+    }];
+    
+    // 3.执行隐藏并验证 
+    if (targetView) {
+        targetView.hidden = YES;
+        NSLog(@"成功隐藏进度条容器：%@", targetView);
+    } else {
+        NSLog(@"⚠ ️ 未找到进度条，可能层级已变化");
+    }
+}
+ 
+%end
 
-%hook AWEStoryProgressSlideView
+//隐藏好友分享私信
+%hook AFDNewFastReplyView
 
 - (void)layoutSubviews {
     %orig;
 
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideStoryProgressSlide"]) {
-        // 找到父视图并隐藏
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePrivateMessages"]) {
         UIView *parentView = self.superview;
         if (parentView) {
             parentView.hidden = YES;
@@ -3027,6 +3125,12 @@ static CGFloat currentScale = 1.0;
     NSString *customFileName = nil;
     if ([nameString containsString:@"_comment"]) {
         customFileName = @"comment.png";
+    } else if ([nameString containsString:@"_like"]) {
+        customFileName = @"like_before.png";
+    } else if ([nameString containsString:@"_collect"]) {
+        customFileName = @"unfavorite.png";
+    } else if ([nameString containsString:@"_share"]) {
+        customFileName = @"share.png";
     }
 
     for (NSString *prefix in iconMapping.allKeys) {
@@ -3171,13 +3275,21 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
-%hook AWEConcernSkylightCapsuleView
+//隐藏关注直播
+%hook AWEConcernSkylightCapsuleView 
 - (void)setHidden:(BOOL)hidden {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideConcernCapsuleView"]) {
         hidden = YES;
     }
-
     %orig(hidden);
+}
+ 
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideConcernCapsuleView"]) {
+        self.hidden = YES;
+        self.alpha = 0;
+    }
 }
 %end
 
@@ -3601,32 +3713,15 @@ static BOOL isDownloadFlied = NO;
 
 //隐藏笔记
 %hook AWECorrelationItemTag
+
 - (void)layoutSubviews {
-   if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideItemTag"]) {
-      // 兼容性检查
-      if ([self respondsToSelector:@selector(removeFromSuperview)]) {
-         // 记录原始父视图
-         UIView *parent = self.superview;
-
-         // 先隐藏再移除确保动画同步
-         self.alpha = 0.f;
-         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [self removeFromSuperview];
-
-            // 手动触发父视图布局更新
-            [parent setNeedsLayout];
-            [parent layoutIfNeeded];
-         });
-      } else {
-         // 备用方案：调整位置并保持布局同步
-         self.frame = CGRectOffset(self.frame, 1, 0);
-         [self.superview setNeedsLayout];
-         [self.superview layoutIfNeeded];
-      }
-      return;
-   }
-   %orig;
+    %orig; 
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideItemTag"]) {
+        self.frame = CGRectMake(0, 0, 0, 0);
+        self.hidden = YES;
+    }
 }
+
 %end
 
 //隐藏话题
@@ -3724,16 +3819,11 @@ static BOOL isDownloadFlied = NO;
 //隐藏首页直播胶囊
 %hook AWEHPTopTabItemBadgeContentView
 
-- (void)updateSmallRedDotLayout {
-    %orig;
-    
+- (void)layoutSubviews {
+    %orig; 
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveCapsuleView"]) {
-        UIView *parentView = self.superview; // 现在可以正确访问
-        if (parentView) {
-            parentView.hidden = YES;
-        } else {
-            self.hidden = YES;
-        }
+        self.frame = CGRectMake(0, 0, 0, 0);
+        self.hidden = YES;
     }
 }
 
@@ -3847,6 +3937,16 @@ static BOOL isDownloadFlied = NO;
 %hook WKScrollView
 - (void)layoutSubviews {
     %orig;
+    
+    UIResponder *responder = self;
+    while (responder) {
+        NSString *className = NSStringFromClass([responder class]);
+        if ([className isEqualToString:@"BDPAppPageController"] || [className isEqualToString:@"BDPStarkController"]) {
+            return; //排除小程序和游戏的影响
+        }
+        responder = responder.nextResponder;
+    }
+
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"]) {
         self.hidden = YES;
     }
