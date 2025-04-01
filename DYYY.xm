@@ -1686,23 +1686,31 @@
 }
 %end
 
-%hook AWEPlayInteractionUserAvatarElement
-- (void)onFollowViewClicked:(UITapGestureRecognizer *)gesture {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
-        
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [DYYYBottomAlertView showAlertWithTitle:@"关注确认" 
-                                           message:@"是否确认关注？" 
-                                       cancelAction:nil 
-                                       confirmAction:^{
-                %orig(gesture);
-            }];
-        });
-    } else {
-        %orig;
-    }
-}
+%hook UITapGestureRecognizer
 
+- (void)setState:(UIGestureRecognizerState)state {
+    if (state == UIGestureRecognizerStateEnded) {
+        UIView *targetView = self.view;
+        if ([targetView isKindOfClass:NSClassFromString(@"AWEPlayInteractionFollowPromptView")] || 
+            [targetView.superview isKindOfClass:NSClassFromString(@"AWEPlayInteractionFollowPromptView")]) {
+            
+            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [DYYYBottomAlertView showAlertWithTitle:@"关注确认" 
+                                                   message:@"是否确认关注？" 
+                                               cancelAction:nil 
+                                               confirmAction:^{
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            %orig(state); 
+                        });
+                    }];
+                });
+                return;
+            }
+        }
+    }
+    %orig(state);
+}
 
 %end
 
