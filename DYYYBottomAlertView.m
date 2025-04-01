@@ -59,9 +59,9 @@
         }
         
         // 创建弹窗内容视图
-        _alertView = [[UIView alloc] init];
+        _alertView = [[UIView alloc] initWithFrame:CGRectMake(6, self.bounds.size.height, self.bounds.size.width - 12, 200 + bottomSafeAreaHeight)];
         _alertView.backgroundColor = [UIColor whiteColor];
-        _alertView.layer.cornerRadius = 20.0;
+        _alertView.layer.cornerRadius = 50.0;
         _alertView.layer.masksToBounds = YES;
         _alertView.clipsToBounds = YES;
         
@@ -73,57 +73,48 @@
         
         [self addSubview:_alertView];
         
-        // 设置弹窗的大小和位置（考虑底部安全区域）
-        CGFloat alertWidth = self.bounds.size.width;
-        CGFloat alertHeight = 200 + bottomSafeAreaHeight;
-        _alertView.frame = CGRectMake(0, self.bounds.size.height, alertWidth, alertHeight);
+        // 添加拖拽手势
+        UIPanGestureRecognizer *panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePanGesture:)];
+        [_alertView addGestureRecognizer:panGesture];
         
         // 创建标题
-        _titleLabel = [[UILabel alloc] init];
+        _titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 15, _alertView.frame.size.width - 60, 24)];
         _titleLabel.text = title;
         _titleLabel.textAlignment = NSTextAlignmentCenter;
-        _titleLabel.font = [UIFont boldSystemFontOfSize:17];
-        [_alertView addSubview:_titleLabel];
+        _titleLabel.font = [UIFont boldSystemFontOfSize:18];
+        _titleLabel.center = CGPointMake(_alertView.frame.size.width / 2, _titleLabel.center.y);
         
         // 创建消息
-        _messageLabel = [[UILabel alloc] init];
+        _messageLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, CGRectGetMaxY(_titleLabel.frame) + 30, _alertView.frame.size.width - 60, 60)];
         _messageLabel.text = message;
         _messageLabel.textAlignment = NSTextAlignmentCenter;
         _messageLabel.numberOfLines = 0;
         _messageLabel.font = [UIFont systemFontOfSize:17];
-        [_alertView addSubview:_messageLabel];
-    
+        _messageLabel.textColor = [UIColor darkGrayColor];
+        _messageLabel.center = CGPointMake(_alertView.frame.size.width / 2, _messageLabel.center.y);
         
         // 创建取消按钮
-        _cancelButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        _cancelButton = [[UIButton alloc] initWithFrame:CGRectMake(_alertView.frame.size.width * 0.08, _alertView.frame.size.height - 75, _alertView.frame.size.width * 0.4, 50)];
         [_cancelButton setTitle:@"取消" forState:UIControlStateNormal];
         [_cancelButton addTarget:self action:@selector(cancelButtonTapped) forControlEvents:UIControlEventTouchUpInside];
-        _cancelButton.backgroundColor = [UIColor colorWithRed:242.0/255.0 green:239.0/255.0 blue:242.0/255.0 alpha:1.0];
+        _cancelButton.backgroundColor = [UIColor colorWithWhite:0.95 alpha:1.0];
         _cancelButton.layer.cornerRadius = 14.0;
         [_cancelButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
-        _cancelButton.font = [UIFont boldSystemFontOfSize:15];
-        [_alertView addSubview:_cancelButton];
+        _cancelButton.titleLabel.font = [UIFont systemFontOfSize:16];
         
         // 创建确认按钮
-        _confirmButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        _confirmButton = [[UIButton alloc] initWithFrame:CGRectMake(_alertView.frame.size.width * 0.52, _alertView.frame.size.height - 75, _alertView.frame.size.width * 0.4, 50)];
         [_confirmButton setTitle:@"确定" forState:UIControlStateNormal];
         [_confirmButton addTarget:self action:@selector(confirmButtonTapped) forControlEvents:UIControlEventTouchUpInside];
-        _confirmButton.backgroundColor = [UIColor colorWithRed:253.0/255.0 green:40.0/255.0 blue:77.0/255.0 alpha:1.0]; // fd284d
+        _confirmButton.backgroundColor = [UIColor colorWithRed:254/255.0 green:47/255.0 blue:85/255.0 alpha:1.0];
         _confirmButton.layer.cornerRadius = 14.0;
         [_confirmButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-        _confirmButton.font = [UIFont boldSystemFontOfSize:15];
+        _confirmButton.titleLabel.font = [UIFont boldSystemFontOfSize:16];
+        
+        [_alertView addSubview:_titleLabel];
+        [_alertView addSubview:_messageLabel];
+        [_alertView addSubview:_cancelButton];
         [_alertView addSubview:_confirmButton];
-        
-        // 设置布局（考虑底部安全区域）
-        CGFloat padding = 30.0; 
-        CGFloat buttonHeight = 48.0; 
-        
-        _titleLabel.frame = CGRectMake(padding, padding / 2, alertWidth - padding * 2, 22);
-        _messageLabel.frame = CGRectMake(padding, alertHeight / 2 - buttonHeight, alertWidth - padding * 2, 40); 
-        
-        CGFloat buttonWidth = (alertWidth - padding * 3) / 2;
-        _cancelButton.frame = CGRectMake(padding, alertHeight - buttonHeight - padding, buttonWidth, buttonHeight); 
-        _confirmButton.frame = CGRectMake(CGRectGetMaxX(_cancelButton.frame) + padding, _cancelButton.frame.origin.y, buttonWidth, buttonHeight);
     }
     return self;
 }
@@ -132,22 +123,16 @@
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
     [window addSubview:self];
     
-    [UIView animateWithDuration:0.2 
-                          delay:0 
-                        options:UIViewAnimationOptionCurveEaseOut 
-                     animations:^{
-        self.containerView.alpha = 0.5;
-        self.alertView.frame = CGRectMake(0, self.bounds.size.height - self.alertView.frame.size.height, self.alertView.frame.size.width, self.alertView.frame.size.height);
-    } completion:nil];
+    [UIView animateWithDuration:0.3 animations:^{
+        self.containerView.alpha = 0.4;
+        self.alertView.frame = CGRectMake(6, self.bounds.size.height - self.alertView.frame.size.height - 6, self.bounds.size.width - 12, self.alertView.frame.size.height);
+    }];
 }
 
 - (void)dismiss {
-    [UIView animateWithDuration:0.2 
-                          delay:0 
-                        options:UIViewAnimationOptionCurveEaseIn 
-                     animations:^{
+    [UIView animateWithDuration:0.3 animations:^{
         self.containerView.alpha = 0.0;
-        self.alertView.frame = CGRectMake(0, self.bounds.size.height, self.alertView.frame.size.width, self.alertView.frame.size.height);
+        self.alertView.frame = CGRectMake(6, self.bounds.size.height, self.bounds.size.width - 12, self.alertView.frame.size.height);
     } completion:^(BOOL finished) {
         [self removeFromSuperview];
     }];
@@ -169,6 +154,25 @@
         self.confirmAction();
     }
     [self dismiss];
+}
+
+#pragma mark - Pan Gesture Handling
+
+- (void)handlePanGesture:(UIPanGestureRecognizer *)gesture {
+    CGPoint translation = [gesture translationInView:self.alertView];
+    if (translation.y > 0) {
+        self.alertView.frame = CGRectMake(6, self.bounds.size.height - self.alertView.frame.size.height + translation.y - 6, self.bounds.size.width - 12, self.alertView.frame.size.height);
+    }
+
+    if (gesture.state == UIGestureRecognizerStateEnded) {
+        if (translation.y > 100) {
+            [self dismiss];
+        } else {
+            [UIView animateWithDuration:0.2 animations:^{
+                self.alertView.frame = CGRectMake(6, self.bounds.size.height - self.alertView.frame.size.height - 6, self.bounds.size.width - 12, self.alertView.frame.size.height);
+            }];
+        }
+    }
 }
 
 @end
