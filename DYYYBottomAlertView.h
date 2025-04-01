@@ -8,6 +8,13 @@ typedef void (^DYYYAlertActionHandler)(void);
                            message:(NSString *)message
                       cancelAction:(DYYYAlertActionHandler)cancelAction
                      confirmAction:(DYYYAlertActionHandler)confirmAction;
+
+- (instancetype)initWithTitle:(NSString *)title
+                      message:(NSString *)message
+                 cancelAction:(DYYYAlertActionHandler)cancelAction
+                confirmAction:(DYYYAlertActionHandler)confirmAction;
+
+- (void)show;
 - (void)dismiss;
 
 @end
