@@ -14,23 +14,30 @@
     BOOL shouldModify = NO;
     NSString *transparencyKey = nil;
 
+    BOOL isMiddleContainer = [NSStringFromClass([self class]) isEqualToString:@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer"];
+    BOOL isFirstChildOfMiddleContainer = NO;
+    
+    if (!isMiddleContainer) {
+        UIView *superview = self.superview;
+        if ([NSStringFromClass([superview class]) isEqualToString:@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer"]) {
+            isFirstChildOfMiddleContainer = (superview.subviews.firstObject == self);
+        }
+    }
+
     UIResponder *responder = self.nextResponder;
     BOOL isInCommentPanel = [responder isKindOfClass:NSClassFromString(@"AWECommentPanelContainerSwiftImpl.CommentContainerInnerViewController")];
-
+    
     UIView *superview = self.superview;
     BOOL isFirstSubviewOfCommentInputView = NO;
-    BOOL isFirstSubviewOfMiddleContainer = NO;
-    
-    while (superview && !(isFirstSubviewOfCommentInputView || isFirstSubviewOfMiddleContainer)) {
+    while (superview && !isFirstSubviewOfCommentInputView) {
         if ([superview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputContainerView")]) {
             isFirstSubviewOfCommentInputView = (superview.subviews.firstObject == self);
-        } else if ([superview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer")]) {
-            isFirstSubviewOfMiddleContainer = (superview.subviews.firstObject == self);
+            break;
         }
         superview = superview.superview;
     }
 
-    if (isFirstSubviewOfMiddleContainer || [NSStringFromClass([self class]) isEqualToString:@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer"]) {
+    if (isFirstChildOfMiddleContainer) {
         transparencyKey = @"DYYYInputBoxTransparency";
         shouldModify = YES;
     } else if (isInCommentPanel || isFirstSubviewOfCommentInputView) {
@@ -39,8 +46,13 @@
     }
 
     if (shouldModify && transparencyKey) {
-        transparency = [[NSUserDefaults standardUserDefaults] floatForKey:transparencyKey];
-        transparency = (transparency >= 0.0 && transparency <= 1.0) ? transparency : 1.0;
+        NSString *transparencyStr = [[NSUserDefaults standardUserDefaults] stringForKey:transparencyKey];
+        if (transparencyStr && transparencyStr.length > 0) {
+            transparency = [transparencyStr floatValue];
+            transparency = MAX(0.0, MIN(1.0, transparency));
+        } else {
+            transparency = 1.0;
+        }
 
         CGFloat r, g, b, a;
         if ([backgroundColor getRed:&r green:&g blue:&b alpha:&a]) {
