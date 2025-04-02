@@ -1532,9 +1532,14 @@ static void showUserAgreementAlert() {
         item.isEnable = isEnabled;
     }
     else if ([item.identifier isEqualToString:@"DYYYCommentBlurTransparent"]) {
-        // 毛玻璃透明度依赖于评论区毛玻璃开关
+        // 毛玻璃透明度项的状态取决于开关
         BOOL isEnabled = getUserDefaults(@"DYYYisEnableCommentBlur");
-        item.isEnable = isEnabled;
+        item.isEnable = isEnabled; // 开关开启时启用
+    } 
+    else if ([item.identifier isEqualToString:@"DYYYInputBoxTransparency"] || [item.identifier isEqualToString:@"DYYYCommentTransparency"]) {
+        // 输入框和评论透明度的启用状态与开关相反
+        BOOL isEnabled = getUserDefaults(@"DYYYisEnableCommentBlur");
+        item.isEnable = !isEnabled;
     }
     else if ([item.identifier isEqualToString:@"DYYYShowAllVideoQuality"]) {
         // 清晰度选项依赖于接口解析URL是否设置
@@ -1596,7 +1601,7 @@ static void showUserAgreementAlert() {
         [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
     }
     else if ([identifier isEqualToString:@"DYYYisEnableCommentBlur"]) {
-        // 更新对应的毛玻璃透明度设置的启用状态
+    // 评论区毛玻璃开关状态变化时，更新所有依赖项
         [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
     }
     else if ([identifier isEqualToString:@"DYYYEnableDoubleOpenComment"]) {
@@ -1664,8 +1669,13 @@ static void showUserAgreementAlert() {
             else if ([identifier isEqualToString:@"DYYYEnableCommentColor"] && [item.identifier isEqualToString:@"DYYYCommentColor"]) {
                 item.isEnable = [value boolValue];
             }
-            else if ([identifier isEqualToString:@"DYYYisEnableCommentBlur"] && [item.identifier isEqualToString:@"DYYYCommentBlurTransparent"]) {
-                item.isEnable = [value boolValue];
+            else if ([identifier isEqualToString:@"DYYYisEnableCommentBlur"]) {
+                if ([item.identifier isEqualToString:@"DYYYCommentBlurTransparent"]) {
+                   item.isEnable = [value boolValue]; // 同步毛玻璃透明度项
+                } 
+                else if ([item.identifier isEqualToString:@"DYYYInputBoxTransparency"] || [item.identifier isEqualToString:@"DYYYCommentTransparency"]) {
+                    item.isEnable = ![value boolValue]; // 输入框和评论透明度取反
+                }
             }
             else if ([identifier isEqualToString:@"DYYYInterfaceDownload"]) {
                 if ([item.identifier isEqualToString:@"DYYYShowAllVideoQuality"] || 
