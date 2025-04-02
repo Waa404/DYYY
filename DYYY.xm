@@ -1388,10 +1388,11 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
             // 检查文本内容
             if (labelText) {
 
-                // 包含"作者声明"、"就医"、"野生"、"生成"或"理性"
+                // 包含"作者声明"、"就医"、"野生"、"存在"、"生成"或"理性"
                 if ([labelText containsString:@"作者声明"] || 
                     [labelText containsString:@"就医"] || 
                     [labelText containsString:@"生成"] ||
+                    [labelText containsString:@"存在"] ||
                     [labelText containsString:@"野生"] ||
                     [labelText containsString:@"理性"]) {
 
@@ -3403,6 +3404,18 @@ static BOOL isDownloadFlied = NO;
         }
         self.hidden = YES;
         return;
+    }
+}
+%end
+
+
+//隐藏直播点歌
+%hook IESLiveKTVSongIndicatorView 
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideKTVSongIndicator"]) {
+        self.hidden = YES;
+        [self removeFromSuperview];
     }
 }
 %end
