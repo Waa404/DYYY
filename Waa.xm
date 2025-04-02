@@ -10,48 +10,48 @@
 %hook UIView
 
 - (void)setBackgroundColor:(UIColor *)backgroundColor {
+
+    BOOL isBlurEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"];
+    if (isBlurEnabled) {
+        %orig(backgroundColor);
+        return;
+    }
+
     CGFloat transparency = 1.0;
     BOOL shouldModify = NO;
     NSString *transparencyKey = nil;
 
-    BOOL isMiddleContainer = [NSStringFromClass([self class]) isEqualToString:@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer"];
+    UIView *superview = self.superview;
     BOOL isFirstChildOfMiddleContainer = NO;
+    BOOL isFirstChildOfCommentContainer = NO;
     
-    if (!isMiddleContainer) {
-        UIView *superview = self.superview;
-        if ([NSStringFromClass([superview class]) isEqualToString:@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer"]) {
+    while (superview && !(isFirstChildOfMiddleContainer || isFirstChildOfCommentContainer)) {
+        if ([superview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer")]) {
             isFirstChildOfMiddleContainer = (superview.subviews.firstObject == self);
         }
-    }
-
-    UIResponder *responder = self.nextResponder;
-    BOOL isInCommentPanel = [responder isKindOfClass:NSClassFromString(@"AWECommentPanelContainerSwiftImpl.CommentContainerInnerViewController")];
-    
-    UIView *superview = self.superview;
-    BOOL isFirstSubviewOfCommentInputView = NO;
-    while (superview && !isFirstSubviewOfCommentInputView) {
-        if ([superview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputContainerView")]) {
-            isFirstSubviewOfCommentInputView = (superview.subviews.firstObject == self);
-            break;
+        else if ([superview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputContainerView")]) {
+            isFirstChildOfCommentContainer = (superview.subviews.firstObject == self);
         }
         superview = superview.superview;
     }
 
+    UIResponder *responder = self.nextResponder;
+    BOOL isInCommentPanel = [responder isKindOfClass:NSClassFromString(@"AWECommentPanelContainerSwiftImpl.CommentContainerInnerViewController")];
+
     if (isFirstChildOfMiddleContainer) {
         transparencyKey = @"DYYYInputBoxTransparency";
         shouldModify = YES;
-    } else if (isInCommentPanel || isFirstSubviewOfCommentInputView) {
+    } 
+    else if (isFirstChildOfCommentContainer || isInCommentPanel) {
         transparencyKey = @"DYYYCommentTransparency";
         shouldModify = YES;
     }
 
-    if (shouldModify && transparencyKey) {
+    if (shouldModify) {
         NSString *transparencyStr = [[NSUserDefaults standardUserDefaults] stringForKey:transparencyKey];
-        if (transparencyStr && transparencyStr.length > 0) {
+        if (transparencyStr.length > 0) {
             transparency = [transparencyStr floatValue];
             transparency = MAX(0.0, MIN(1.0, transparency));
-        } else {
-            transparency = 1.0;
         }
 
         CGFloat r, g, b, a;
@@ -96,20 +96,10 @@ UIColor *darkerColorForColor(UIColor *color) {
 
 - (void)recursiveModifyImageViewsInView:(UIView *)view {
 
-    BOOL isCommentBlurEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"];
     BOOL isCommentColorEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableCommentColor"];
     NSString *customHexColor = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYCommentColor"];
     UIColor *customColor = nil;
 
-    // 隐藏输入框上方横线
-    if (isCommentBlurEnabled) {
-        for (UIView *subview in self.subviews) {
-            CGRect frame = subview.frame;
-            if (frame.size.width == 430 && frame.size.height == 0.6666666666666666) {
-                subview.hidden = YES;
-            }
-        }
-    }
     // 评论区文字颜色
     if (customHexColor.length > 0) {
         unsigned int hexValue = 0;
@@ -227,6 +217,13 @@ UIColor *darkerColorForColor(UIColor *color) {
         if (![NSStringFromClass([self class]) containsString:@"AWEIMFeedBottomQuickEmojiInputBar"]) {
             self.backgroundColor = [UIColor clearColor];
             self.layer.backgroundColor = [UIColor clearColor].CGColor;
+        }
+    }
+    // 隐藏输入框上方横线
+    for (UIView *subview in self.subviews) {
+        CGRect frame = subview.frame;
+        if (frame.size.width == 430 && frame.size.height == 0.6666666666666666) {
+            subview.hidden = YES;
         }
     }
 
