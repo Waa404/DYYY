@@ -2,7 +2,58 @@
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
 
-// 计算颜色的更深版本
+// 调整评论区透明度
+@interface UIView(Comment)
+- (void)setBackgroundColor:(UIColor *)backgroundColor;
+@end
+
+%hook UIView
+
+- (void)setBackgroundColor:(UIColor *)backgroundColor {
+    CGFloat transparency = 1.0;
+    BOOL shouldModify = NO;
+    NSString *transparencyKey = nil;
+
+    UIResponder *responder = self.nextResponder;
+    BOOL isInCommentPanel = [responder isKindOfClass:NSClassFromString(@"AWECommentPanelContainerSwiftImpl.CommentContainerInnerViewController")];
+
+    UIView *superview = self.superview;
+    BOOL isFirstSubviewOfCommentInputView = NO;
+    BOOL isFirstSubviewOfMiddleContainer = NO;
+    
+    while (superview && !(isFirstSubviewOfCommentInputView || isFirstSubviewOfMiddleContainer)) {
+        if ([superview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputContainerView")]) {
+            isFirstSubviewOfCommentInputView = (superview.subviews.firstObject == self);
+        } else if ([superview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer")]) {
+            isFirstSubviewOfMiddleContainer = (superview.subviews.firstObject == self);
+        }
+        superview = superview.superview;
+    }
+
+    if (isFirstSubviewOfMiddleContainer || [NSStringFromClass([self class]) isEqualToString:@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer"]) {
+        transparencyKey = @"DYYYInputBoxTransparency";
+        shouldModify = YES;
+    } else if (isInCommentPanel || isFirstSubviewOfCommentInputView) {
+        transparencyKey = @"DYYYCommentTransparency";
+        shouldModify = YES;
+    }
+
+    if (shouldModify && transparencyKey) {
+        transparency = [[NSUserDefaults standardUserDefaults] floatForKey:transparencyKey];
+        transparency = (transparency >= 0.0 && transparency <= 1.0) ? transparency : 1.0;
+
+        CGFloat r, g, b, a;
+        if ([backgroundColor getRed:&r green:&g blue:&b alpha:&a]) {
+            backgroundColor = [UIColor colorWithRed:r green:g blue:b alpha:transparency];
+        }
+    }
+
+    %orig(backgroundColor);
+}
+
+%end
+
+// 调整评论区文字颜色
 UIColor *darkerColorForColor(UIColor *color) {
     CGFloat hue, saturation, brightness, alpha;
     if ([color getHue:&hue saturation:&saturation brightness:&brightness alpha:&alpha]) {
@@ -32,10 +83,22 @@ UIColor *darkerColorForColor(UIColor *color) {
 }
 
 - (void)recursiveModifyImageViewsInView:(UIView *)view {
+
+    BOOL isCommentBlurEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"];
     BOOL isCommentColorEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableCommentColor"];
     NSString *customHexColor = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYCommentColor"];
     UIColor *customColor = nil;
 
+    // 隐藏输入框上方横线
+    if (isCommentBlurEnabled) {
+        for (UIView *subview in self.subviews) {
+            CGRect frame = subview.frame;
+            if (frame.size.width == 430 && frame.size.height == 0.6666666666666666) {
+                subview.hidden = YES;
+            }
+        }
+    }
+    // 评论区文字颜色
     if (customHexColor.length > 0) {
         unsigned int hexValue = 0;
         NSScanner *scanner = [NSScanner scannerWithString:[customHexColor hasPrefix:@"#"] ? [customHexColor substringFromIndex:1] : customHexColor];
@@ -90,19 +153,10 @@ UIColor *darkerColorForColor(UIColor *color) {
 
     NSString *className = NSStringFromClass([self class]);
 
-    BOOL isCommentBlurEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"];
     BOOL isFullScreenEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"];
     BOOL isCommentColorEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableCommentColor"];
 
-    if (isCommentBlurEnabled) {
-        for (UIView *subview in self.subviews) {
-            CGRect frame = subview.frame;
-            if (frame.size.width == 430 && frame.size.height == 0.6666666666666666) {
-                subview.hidden = YES;
-            }
-        }
-    }
-
+    // 评论区文字
     if (isCommentColorEnabled) {
         NSString *customHexColor = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYCommentColor"];
         UIColor *customColor = nil;
@@ -125,7 +179,6 @@ UIColor *darkerColorForColor(UIColor *color) {
             for (UIView *subview in self.subviews) {
                 NSString *subviewClassName = NSStringFromClass([subview class]);
 
-                // 修改评论区文字颜色
                 if ([subview isKindOfClass:[UILabel class]] &&
                     [subviewClassName isEqualToString:@"AWECommentSwiftBizUI.CommentInteractionBaseLabel"]) {
                     ((UILabel *)subview).textColor = darkerColor;
@@ -157,6 +210,7 @@ UIColor *darkerColorForColor(UIColor *color) {
         }
     }
 
+    // 私聊视频全屏
     if (isFullScreenEnabled && [self fs_isQuickReplayView]) {
         if (![NSStringFromClass([self class]) containsString:@"AWEIMFeedBottomQuickEmojiInputBar"]) {
             self.backgroundColor = [UIColor clearColor];
