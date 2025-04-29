@@ -318,7 +318,7 @@ static AWESettingSectionModel *createSection(NSString *title, NSArray *items) {
 
 static void showUserAgreementAlert() {
 	showTextInputAlert(
-	    @"用户协议", @"", @"",
+	    @"用户协议", @"本插件为开源项目\n仅供学习交流用途\n如有侵权请联系, GitHub 仓库：huami1314/DYYY\n请遵守当地法律法规, " @"逆向工程仅为学习目的\n盗用源码进行商业用途/发布但未标记开源项目必究\n详情请参阅项目内 MIT 许可证\n\n请输入\"我已阅读并同意继续使用\"以继续",
 	    ^(NSString *text) {
 	      if ([text isEqualToString:@"我已阅读并同意继续使用"]) {
 		      setUserDefaults(@"YES", @"DYYYUserAgreementAccepted");
@@ -2303,6 +2303,86 @@ static void showUserAgreementAlert() {
 		    [rootVC.navigationController pushViewController:(UIViewController *)subVC animated:YES];
 		  };
 		  [mainItems addObject:floatButtonSettingItem];
+
+		  // 创建WaaHook分类项
+		  AWESettingItemModel *WaaHookItem = [[%c(AWESettingItemModel) alloc] init];
+		  WaaHookItem.identifier = @"WaaHookSettings";
+		  WaaHookItem.title = @"WaaHook";
+		  WaaHookItem.type = 0;
+		  WaaHookItem.svgIconImageName = @"ic_star_outlined_20";
+		  WaaHookItem.cellType = 26;
+		  WaaHookItem.colorStyle = 0;
+		  WaaHookItem.isEnable = YES;
+		  WaaHookItem.cellTappedBlock = ^{
+		    // 创建WaaHook二级界面的设置项
+		    NSMutableDictionary *cellTapHandlers = [NSMutableDictionary dictionary];
+
+		    // 【外观设置】分类
+		    NSMutableArray<AWESettingItemModel *> *UIItems = [NSMutableArray array];
+		    NSArray *UISettings = @[
+			    @{@"identifier" : @"WaaEnableCommentColor",
+			      @"title" : @"启用评论文字改色",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_comment_outlined_20"},
+			    @{@"identifier" : @"WaaCommentColor",
+			      @"title" : @"自定评论文字颜色",
+			      @"detail" : @"十六进制",
+			      @"cellType" : @26,
+			      @"imageName" : @"ic_msg_outlined_20"},
+			    @{@"identifier" : @"WaaCommentTransparency",
+			      @"title" : @"调整评论区透明度",
+			      @"detail" : @"0-1小数",
+			      @"cellType" : @26,
+			      @"imageName" : @"ic_comment_outlined_20"},
+			    @{@"identifier" : @"WaaInputBoxTransparency",
+			      @"title" : @"调整输入框透明度",
+			      @"detail" : @"0-1小数",
+			      @"cellType" : @26,
+			      @"imageName" : @"ic_comment_outlined_20"},
+			    @{@"identifier" : @"WaaEnableHomeFullScreen",
+			      @"title" : @"启用主页视频全屏",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_fullscreen_outlined_16"}
+		    ];
+
+		    for (NSDictionary *dict in UISettings) {
+			    AWESettingItemModel *item = [self createSettingItem:dict cellTapHandlers:cellTapHandlers];
+			    [UIItems addObject:item];
+		    }
+
+		    // 【隐藏设置】分类
+		    NSMutableArray<AWESettingItemModel *> *HideItems = [NSMutableArray array];
+		    NSArray * HideSettings = @[
+			    @{@"identifier" : @"WaaHideChatCommentBg",
+			      @"title" : @"隐藏视频评论背景",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"WaaHidePurityRrogress",
+			      @"title" : @"隐藏双指清屏进度",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"}
+
+		    ];
+
+		    for (NSDictionary *dict in HideSettings) {
+			    AWESettingItemModel *item = [self createSettingItem:dict cellTapHandlers:cellTapHandlers];
+			    [HideItems addObject:item];
+		    }
+
+		    // 创建并组织所有section
+		    NSMutableArray *sections = [NSMutableArray array];
+		    [sections addObject:createSection(@"外观设置", UIItems)];
+		    [sections addObject:createSection(@"隐藏设置", HideItems)];
+
+		    // 创建并推入二级设置页面
+		    AWESettingBaseViewController *subVC = createSubSettingsViewController(@"WaaHook", sections);
+		    [rootVC.navigationController pushViewController:(UIViewController *)subVC animated:YES];
+		  };
+		  [mainItems addObject:WaaHookItem];
 
 		  // 创建备份设置分类（单独section）
 		  AWESettingSectionModel *backupSection = [[%c(AWESettingSectionModel) alloc] init];

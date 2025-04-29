@@ -545,6 +545,9 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"] && frame.origin.x != 0) {
 			return;
+		} else if ([[[NSUserDefaults standardUserDefaults] objectForKey:@"WaaCommentTransparency"] length] > 0 && [[[NSUserDefaults standardUserDefaults] objectForKey:@"WaaCommentTransparency"] doubleValue] < 1.0 && frame.origin.x != 0) {
+			// 增加调整评论区透明度后的兼容
+			return;	
 		} else if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] && frame.origin.x != 0 && frame.origin.y != 0) {
 			%orig;
 			return;

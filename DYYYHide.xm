@@ -85,15 +85,30 @@
 // 隐藏右下音乐和取消静音按钮
 %hook AFDCancelMuteAwemeView
 - (void)layoutSubviews {
-	%orig;
+    %orig;
 
-	UIView *superview = self.superview;
+    UIView *superview = self.superview;
+    if ([superview isKindOfClass:NSClassFromString(@"AWEBaseElementView")]) {
+        BOOL hideCancelMute = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCancelMute"];
+        BOOL hideMusicButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMusicButton"];
 
-	if ([superview isKindOfClass:NSClassFromString(@"AWEBaseElementView")]) {
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCancelMute"]) {
-			self.hidden = YES;
-		}
-	}
+        if (hideCancelMute && hideMusicButton) {
+            [superview removeFromSuperview];
+        } else if (hideCancelMute) {
+            self.hidden = YES;
+        }
+    }
+}
+
+- (void)willMoveToSuperview:(UIView *)newSuperview {
+    %orig;
+
+    if (newSuperview == nil && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMusicButton"]) {
+        UIView *superview = self.superview;
+        if ([superview isKindOfClass:NSClassFromString(@"AWEBaseElementView")]) {
+            [superview removeFromSuperview];
+        }
+    }
 }
 %end
 
@@ -530,6 +545,7 @@
 
 %end
 
+// 音乐按钮
 %hook AWEMusicCoverButton
 
 - (void)layoutSubviews {
@@ -539,7 +555,7 @@
 
 	if ([accessibilityLabel isEqualToString:@"音乐详情"]) {
 		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMusicButton"]) {
-			[self removeFromSuperview];
+			self.alpha = 0;
 			return;
 		}
 	}
@@ -547,12 +563,13 @@
 
 %end
 
+// 听音乐按钮
 %hook AWEPlayInteractionListenFeedView
 - (void)layoutSubviews {
 	%orig;
 
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMusicButton"]) {
-		[self removeFromSuperview];
+		self.alpha = 0;
 		return;
 	}
 }

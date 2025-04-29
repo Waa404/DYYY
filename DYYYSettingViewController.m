@@ -294,12 +294,22 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
             [DYYYSettingItem itemWithTitle:@"启用一键清屏按钮" key:@"DYYYEnableFloatClearButton" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"快捷清屏按钮大小" key:@"DYYYEnableFloatClearButtonSize" type:DYYYSettingItemTypeTextField placeholder:@"默认40"],
             [DYYYSettingItem itemWithTitle:@"清屏隐藏时间进度" key:@"DYYYEnabshijianjindu" type:DYYYSettingItemTypeSwitch]
+        ],
+        @[
+            [DYYYSettingItem itemWithTitle:@"启用评论文字改色" key:@"WaaEnableCommentColor" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"自定评论文字颜色" key:@"WaaCommentColor" type:DYYYSettingItemTypeTextField placeholder:@"十六进制"],
+            [DYYYSettingItem itemWithTitle:@"调整评论区透明度" key:@"WaaCommentTransparency" type:DYYYSettingItemTypeTextField placeholder:@"0-1小数"],
+            [DYYYSettingItem itemWithTitle:@"调整输入框透明度" key:@"WaaInputBoxTransparency" type:DYYYSettingItemTypeTextField placeholder:@"0-1小数"],
+            [DYYYSettingItem itemWithTitle:@"启用主页视频全屏" key:@"WaaEnableHomeFullScreen" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"隐藏视频评论背景" key:@"WaaHideChatCommentBg" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"隐藏双指清屏进度" key:@"WaaHidePurityRrogress" type:DYYYSettingItemTypeSwitch]
+
         ]
     ];
 }
 
 - (void)setupSectionTitles {
-    self.sectionTitles = [@[@"基本设置", @"界面设置", @"隐藏设置", @"顶栏移除", @"功能设置", @"悬浮按钮"] mutableCopy];
+    self.sectionTitles = [@[@"基本设置", @"界面设置", @"隐藏设置", @"顶栏移除", @"功能设置", @"悬浮按钮", @"WaaHook"] mutableCopy];
 }
 
 - (void)setupFooterLabel {
@@ -415,6 +425,8 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
             return @"功能设置";
         case 5:
             return @"悬浮按钮";
+        case 6:
+            return @"WaaHook";
         default:
             return @"";
     }
