@@ -545,7 +545,7 @@
 
 %end
 
-// 音乐按钮
+// 右下音乐按钮
 %hook AWEMusicCoverButton
 
 - (void)layoutSubviews {
@@ -563,7 +563,7 @@
 
 %end
 
-// 听音乐按钮
+// 右下听抖音按钮
 %hook AWEPlayInteractionListenFeedView
 - (void)layoutSubviews {
 	%orig;

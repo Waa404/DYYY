@@ -2026,6 +2026,64 @@ static CGFloat currentScale = 1.0;
  
 %end
 
+// 为 AWEUserActionSheetView 添加毛玻璃效果和白色文字
+%hook AWEUserActionSheetView
+
+- (void)layoutSubviews {
+    %orig;
+    [self applyBlurEffectAndWhiteText];
+}
+
+
+
+%new
+- (void)applyBlurEffectAndWhiteText {
+    // 应用毛玻璃效果到容器视图
+    if (self.containerView) {
+        self.containerView.backgroundColor = [UIColor clearColor];
+        
+        for (UIView *subview in self.containerView.subviews) {
+            if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 9999) {
+                [subview removeFromSuperview];
+            }
+        }
+
+        UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+        UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+        blurEffectView.frame = self.containerView.bounds;
+        blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        blurEffectView.alpha = 0.85; 
+        blurEffectView.tag = 9999;
+
+        [self.containerView insertSubview:blurEffectView atIndex:0];
+
+        [self setTextColorWhiteRecursivelyInView:self.containerView];
+        
+    }
+}
+
+%new
+- (void)setTextColorWhiteRecursivelyInView:(UIView *)view {
+    for (UIView *subview in view.subviews) {
+        if (![subview isKindOfClass:[UIVisualEffectView class]]) {
+            subview.backgroundColor = [UIColor clearColor];
+        }
+
+        if ([subview isKindOfClass:[UILabel class]]) {
+            UILabel *label = (UILabel *)subview;
+            label.textColor = [UIColor whiteColor];
+        }
+
+        if ([subview isKindOfClass:[UIButton class]]) {
+            UIButton *button = (UIButton *)subview;
+            [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        }
+        
+        [self setTextColorWhiteRecursivelyInView:subview];
+    }
+}
+%end
+
 %hook _TtC33AWECommentLongPressPanelSwiftImpl32CommentLongPressPanelCopyElement
 
 - (void)elementTapped {
@@ -2047,7 +2105,7 @@ static CGFloat currentScale = 1.0;
 	%init(DYYYSettingsGesture);
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
 		%init;
-		dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+		dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
 		  %init(needDelays);
 		});
 	}
