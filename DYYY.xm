@@ -1111,73 +1111,85 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 // MARK: 视频显示进度条以及视频进度秒数
 - (void)setLimitUpperActionArea:(BOOL)arg1 {
-	%orig;
-	// 定义一下进度条默认算法
-	NSString *duration = [self.progressSliderDelegate formatTimeFromSeconds:floor(self.progressSliderDelegate.model.videoDuration / 1000)];
-	// 如果开启了显示时间进度
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
-		UIView *parentView = self.superview;
-		if (!parentView)
-			return;
+    %orig;
+    // 定义一下进度条默认算法
+    NSString *duration = [self.progressSliderDelegate formatTimeFromSeconds:floor(self.progressSliderDelegate.model.videoDuration / 1000)];
+    // 如果开启了显示时间进度
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
+        UIView *parentView = self.superview;
+        if (!parentView)
+            return;
 
-		// 移除之前可能存在的标签
-		[[parentView viewWithTag:10001] removeFromSuperview];
-		[[parentView viewWithTag:10002] removeFromSuperview];
+        // 移除之前可能存在的标签
+        [[parentView viewWithTag:10001] removeFromSuperview];
+        [[parentView viewWithTag:10002] removeFromSuperview];
 
-		// 计算标签在父视图中的位置
-		CGRect sliderFrame = [self convertRect:self.bounds toView:parentView];
+        // 计算标签在父视图中的位置
+        CGRect sliderFrame = [self convertRect:self.bounds toView:parentView];
 
-		// 获取垂直偏移量配置值，默认为-12.5
-		CGFloat verticalOffset = -12.5;
-		NSString *offsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimelineVerticalPosition"];
-		if (offsetValue.length > 0) {
-			CGFloat configOffset = [offsetValue floatValue];
-			if (configOffset != 0) {
-				verticalOffset = configOffset;
-			}
-		}
+        // 获取垂直偏移量配置值，默认为-12.5
+        CGFloat verticalOffset = -12.5;
+        NSString *offsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimelineVerticalPosition"];
+        if (offsetValue.length > 0) {
+            CGFloat configOffset = [offsetValue floatValue];
+            if (configOffset != 0) {
+                verticalOffset = configOffset;
+            }
+        }
 
-		// 获取显示样式设置
-		NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
-		BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
-		BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
+        // 获取显示样式设置
+        NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+        BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
+        BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
+        BOOL showLeftRemainingTime = [scheduleStyle isEqualToString:@"进度条左侧剩余"];
+        BOOL showLeftCompleteTime = [scheduleStyle isEqualToString:@"进度条左侧完整"];
 
-		// 获取用户设置的时间标签颜色
-		NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
-		UIColor *labelColor = [UIColor whiteColor]; // 默认白色
-		if (labelColorHex && labelColorHex.length > 0) {
-			labelColor = [DYYYManager colorWithHexString:labelColorHex];
-		}
+        // 获取用户设置的时间标签颜色
+        NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
+        UIColor *labelColor = [UIColor whiteColor]; // 默认白色
+        if (labelColorHex && labelColorHex.length > 0) {
+            labelColor = [DYYYManager colorWithHexString:labelColorHex];
+        }
 
-		// 只有在非"进度条右侧剩余"和非"进度条右侧完整"模式时创建左侧时间标签
-		if (!showRemainingTime && !showCompleteTime) {
-			// 创建左侧时间标签
-			UILabel *leftLabel = [[UILabel alloc] init];
-			leftLabel.frame = CGRectMake(sliderFrame.origin.x, sliderFrame.origin.y + verticalOffset, 50, 15);
-			leftLabel.backgroundColor = [UIColor clearColor];
-			[leftLabel setText:@"00:00"];
-			[leftLabel setTextColor:labelColor];
-			[leftLabel setFont:[UIFont systemFontOfSize:8]];
-			leftLabel.tag = 10001;
-			[parentView addSubview:leftLabel];
-		}
+        // 创建左侧时间标签 - 根据不同的显示模式处理
+        if (!showRemainingTime && !showCompleteTime) {
+            UILabel *leftLabel = [[UILabel alloc] init];
+            leftLabel.frame = CGRectMake(sliderFrame.origin.x, sliderFrame.origin.y + verticalOffset, 50, 15);
+            leftLabel.backgroundColor = [UIColor clearColor];
+            
+            // 根据左侧显示模式设置不同的初始文本
+            if (showLeftRemainingTime) {
+                [leftLabel setText:@"00:00"]; // 剩余时间模式
+            } else if (showLeftCompleteTime) {
+                [leftLabel setText:[NSString stringWithFormat:@"00:00/%@", duration]]; // 完整时间模式
+            } else {
+                [leftLabel setText:@"00:00"]; // 默认模式
+            }
+            
+            [leftLabel setTextColor:labelColor];
+            [leftLabel setFont:[UIFont systemFontOfSize:8]];
+            leftLabel.tag = 10001;
+            [parentView addSubview:leftLabel];
+        }
 
-		// 创建右侧时间标签
-		UILabel *rightLabel = [[UILabel alloc] init];
-		if (showCompleteTime) {
-			rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - 50, sliderFrame.origin.y + verticalOffset, 50, 15);
-			// 修改这里：始终使用 00:00/时长 的格式
-			[rightLabel setText:[NSString stringWithFormat:@"00:00/%@", duration]];
-		} else {
-			rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - 23, sliderFrame.origin.y + verticalOffset, 50, 15);
-			[rightLabel setText:showRemainingTime ? @"00:00" : duration];
-		}
-		rightLabel.backgroundColor = [UIColor clearColor];
-		[rightLabel setTextColor:labelColor];
-		[rightLabel setFont:[UIFont systemFontOfSize:8]];
-		rightLabel.tag = 10002;
-		[parentView addSubview:rightLabel];
-	}
+        // 只在非左侧显示模式下创建右侧标签
+        if (!showLeftRemainingTime && !showLeftCompleteTime) {
+            UILabel *rightLabel = [[UILabel alloc] init];
+            if (showCompleteTime) {
+                rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - 50, sliderFrame.origin.y + verticalOffset, 50, 15);
+                // 修改这里：始终使用 00:00/时长 的格式
+                [rightLabel setText:[NSString stringWithFormat:@"00:00/%@", duration]];
+            } else {
+                rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - 23, sliderFrame.origin.y + verticalOffset, 50, 15);
+                [rightLabel setText:showRemainingTime ? @"00:00" : duration];
+            }
+            rightLabel.backgroundColor = [UIColor clearColor];
+            [rightLabel setTextColor:labelColor];
+            [rightLabel setFont:[UIFont systemFontOfSize:8]];
+            rightLabel.tag = 10002;
+            [parentView addSubview:rightLabel];
+        }
+    }
 }
 
 %end
@@ -1220,47 +1232,61 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 }
 
 - (void)updateProgressSliderWithTime:(CGFloat)arg1 totalDuration:(CGFloat)arg2 {
-	%orig;
-	// 如果开启了显示视频进度
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
-		// 获取进度条实例
-		AWEFeedProgressSlider *progressSlider = self.progressSlider;
-		UIView *parentView = progressSlider.superview;
+    %orig;
+    // 如果开启了显示视频进度
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
+        // 获取进度条实例
+        AWEFeedProgressSlider *progressSlider = self.progressSlider;
+        UIView *parentView = progressSlider.superview;
 
-		UILabel *leftLabel = [parentView viewWithTag:10001];
-		UILabel *rightLabel = [parentView viewWithTag:10002];
+        UILabel *leftLabel = [parentView viewWithTag:10001];
+        UILabel *rightLabel = [parentView viewWithTag:10002];
 
-		// 获取用户设置的时间标签颜色
-		NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
-		UIColor *labelColor = [UIColor whiteColor]; // 默认白色
-		if (labelColorHex && labelColorHex.length > 0) {
-			labelColor = [DYYYManager colorWithHexString:labelColorHex];
-		}
+        // 获取用户设置的时间标签颜色
+        NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
+        UIColor *labelColor = [UIColor whiteColor]; // 默认白色
+        if (labelColorHex && labelColorHex.length > 0) {
+            labelColor = [DYYYManager colorWithHexString:labelColorHex];
+        }
 
-		// 获取显示样式设置
-		NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
-		BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
-		BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
+        // 获取显示样式设置
+        NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+        BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
+        BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
+        BOOL showLeftRemainingTime = [scheduleStyle isEqualToString:@"进度条左侧剩余"];
+        BOOL showLeftCompleteTime = [scheduleStyle isEqualToString:@"进度条左侧完整"];
 
-		// 如果检测到时间
-		if (arg1 > 0 && leftLabel) {
-			[leftLabel setText:[self formatTimeFromSeconds:arg1]];
-			[leftLabel setTextColor:labelColor];
-		}
-		if (arg2 > 0 && rightLabel) {
-			if (showRemainingTime) {
-				CGFloat remainingTime = arg2 - arg1;
-				if (remainingTime < 0)
-					remainingTime = 0;
-				[rightLabel setText:[NSString stringWithFormat:@"%@", [self formatTimeFromSeconds:remainingTime]]];
-			} else if (showCompleteTime) {
-				[rightLabel setText:[NSString stringWithFormat:@"%@/%@", [self formatTimeFromSeconds:arg1], [self formatTimeFromSeconds:arg2]]];
-			} else {
-				[rightLabel setText:[self formatTimeFromSeconds:arg2]];
-			}
-			[rightLabel setTextColor:labelColor];
-		}
-	}
+        // 如果检测到时间
+        if (arg1 > 0 && leftLabel) {
+            if (showLeftRemainingTime) {
+                // 计算剩余时间
+                CGFloat remainingTime = arg2 - arg1;
+                if (remainingTime < 0)
+                    remainingTime = 0;
+                [leftLabel setText:[NSString stringWithFormat:@"%@", [self formatTimeFromSeconds:remainingTime]]];
+            } else if (showLeftCompleteTime) {
+                // 显示当前时间/总时间
+                [leftLabel setText:[NSString stringWithFormat:@"%@/%@", [self formatTimeFromSeconds:arg1], [self formatTimeFromSeconds:arg2]]];
+            } else {
+                // 常规模式显示当前时间
+                [leftLabel setText:[self formatTimeFromSeconds:arg1]];
+            }
+            [leftLabel setTextColor:labelColor];
+        }
+        if (arg2 > 0 && rightLabel) {
+            if (showRemainingTime) {
+                CGFloat remainingTime = arg2 - arg1;
+                if (remainingTime < 0)
+                    remainingTime = 0;
+                [rightLabel setText:[NSString stringWithFormat:@"%@", [self formatTimeFromSeconds:remainingTime]]];
+            } else if (showCompleteTime) {
+                [rightLabel setText:[NSString stringWithFormat:@"%@/%@", [self formatTimeFromSeconds:arg1], [self formatTimeFromSeconds:arg2]]];
+            } else {
+                [rightLabel setText:[self formatTimeFromSeconds:arg2]];
+            }
+            [rightLabel setTextColor:labelColor];
+        }
+    }
 }
 
 // 增加检测是否隐藏视频进度条的处理
@@ -1452,50 +1478,59 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		label.font = originalFont;
 	}
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabsuijiyanse"]) {
-        // 随机生成3个颜色，suiji
-        UIColor *color1 = [UIColor colorWithRed:(CGFloat)arc4random_uniform(256) / 255.0 green:(CGFloat)arc4random_uniform(256) / 255.0 blue:(CGFloat)arc4random_uniform(256) / 255.0 alpha:1.0];
-        UIColor *color2 = [UIColor colorWithRed:(CGFloat)arc4random_uniform(256) / 255.0 green:(CGFloat)arc4random_uniform(256) / 255.0 blue:(CGFloat)arc4random_uniform(256) / 255.0 alpha:1.0];
-        UIColor *color3 = [UIColor colorWithRed:(CGFloat)arc4random_uniform(256) / 255.0 green:(CGFloat)arc4random_uniform(256) / 255.0 blue:(CGFloat)arc4random_uniform(256) / 255.0 alpha:1.0];
-	    
-        NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:label.text];
-        CFIndex length = [attributedText length];
-        for (CFIndex i = 0; i < length; i++) {
-            CGFloat progress = (CGFloat)i / (length == 0 ? 1 : length - 1);
-	    
-            UIColor *startColor;
-            UIColor *endColor;
-            CGFloat subProgress;
-	    
-            if (progress < 0.5) {
-                startColor = color1;
-                endColor = color2;
-                subProgress = progress * 2;
-            } else {
-                startColor = color2;
-                endColor = color3;
-                subProgress = (progress - 0.5) * 2;
-            }
-	    
-            CGFloat startRed, startGreen, startBlue, startAlpha;
-            CGFloat endRed, endGreen, endBlue, endAlpha;
-            [startColor getRed:&startRed green:&startGreen blue:&startBlue alpha:&startAlpha];
-            [endColor getRed:&endRed green:&endGreen blue:&endBlue alpha:&endAlpha];
-	    
-            CGFloat red = startRed + (endRed - startRed) * subProgress;
-            CGFloat green = startGreen + (endGreen - startGreen) * subProgress;
-            CGFloat blue = startBlue + (endBlue - startBlue) * subProgress;
-            CGFloat alpha = startAlpha + (endAlpha - startAlpha) * subProgress;
-	    
-            UIColor *currentColor = [UIColor colorWithRed:red green:green blue:blue alpha:alpha];
-            [attributedText addAttribute:NSForegroundColorAttributeName value:currentColor range:NSMakeRange(i, 1)];
-        }
-	    
-        label.attributedText = attributedText;
+		// 随机生成3个颜色，suiji
+		UIColor *color1 = [UIColor colorWithRed:(CGFloat)arc4random_uniform(256) / 255.0
+						  green:(CGFloat)arc4random_uniform(256) / 255.0
+						   blue:(CGFloat)arc4random_uniform(256) / 255.0
+						  alpha:1.0];
+		UIColor *color2 = [UIColor colorWithRed:(CGFloat)arc4random_uniform(256) / 255.0
+						  green:(CGFloat)arc4random_uniform(256) / 255.0
+						   blue:(CGFloat)arc4random_uniform(256) / 255.0
+						  alpha:1.0];
+		UIColor *color3 = [UIColor colorWithRed:(CGFloat)arc4random_uniform(256) / 255.0
+						  green:(CGFloat)arc4random_uniform(256) / 255.0
+						   blue:(CGFloat)arc4random_uniform(256) / 255.0
+						  alpha:1.0];
+
+		NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:label.text];
+		CFIndex length = [attributedText length];
+		for (CFIndex i = 0; i < length; i++) {
+			CGFloat progress = (CGFloat)i / (length == 0 ? 1 : length - 1);
+
+			UIColor *startColor;
+			UIColor *endColor;
+			CGFloat subProgress;
+
+			if (progress < 0.5) {
+				startColor = color1;
+				endColor = color2;
+				subProgress = progress * 2;
+			} else {
+				startColor = color2;
+				endColor = color3;
+				subProgress = (progress - 0.5) * 2;
+			}
+
+			CGFloat startRed, startGreen, startBlue, startAlpha;
+			CGFloat endRed, endGreen, endBlue, endAlpha;
+			[startColor getRed:&startRed green:&startGreen blue:&startBlue alpha:&startAlpha];
+			[endColor getRed:&endRed green:&endGreen blue:&endBlue alpha:&endAlpha];
+
+			CGFloat red = startRed + (endRed - startRed) * subProgress;
+			CGFloat green = startGreen + (endGreen - startGreen) * subProgress;
+			CGFloat blue = startBlue + (endBlue - startBlue) * subProgress;
+			CGFloat alpha = startAlpha + (endAlpha - startAlpha) * subProgress;
+
+			UIColor *currentColor = [UIColor colorWithRed:red green:green blue:blue alpha:alpha];
+			[attributedText addAttribute:NSForegroundColorAttributeName value:currentColor range:NSMakeRange(i, 1)];
+		}
+
+		label.attributedText = attributedText;
 	} else {
-	    NSString *labelColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
-	    if (labelColor.length > 0) {
-	    	label.textColor = [DYYYManager colorWithHexString:labelColor];
-	    }
+		NSString *labelColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
+		if (labelColor.length > 0) {
+			label.textColor = [DYYYManager colorWithHexString:labelColor];
+		}
 	}
 	return label;
 }
@@ -1797,7 +1832,6 @@ static CGFloat currentScale = 1.0;
 
 %end
 
-
 // 去除启动视频广告
 %hook AWEAwesomeSplashFeedCellOldAccessoryView
 
@@ -1827,6 +1861,9 @@ static CGFloat currentScale = 1.0;
 // 获取资源的地址
 %hook AWEURLModel
 %new - (NSURL *)getDYYYSrcURLDownload {
+	;
+	;
+	;
 	;
 	;
 	NSURL *bestURL;
@@ -1881,7 +1918,6 @@ static CGFloat currentScale = 1.0;
 }
 
 %end
-
 
 // 应用内推送毛玻璃效果
 %hook AWEInnerNotificationWindow
@@ -1969,9 +2005,7 @@ static CGFloat currentScale = 1.0;
 
 	[self clearBackgroundRecursivelyInView:containerView];
 
-	if (isDarkMode) {
-		[self setLabelsColorWhiteInView:containerView];
-	}
+	[self setLabelsColorWhiteInView:containerView];
 }
 
 %new
@@ -2003,84 +2037,83 @@ static CGFloat currentScale = 1.0;
 
 %end
 
-//开启自动背景切换
+// 开启自动背景切换
 %hook AWESettingThemeManager
- 
+
 // 控制自动主题开关状态
 - (BOOL)isAutoChangeEnable {
-     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoTheme"]) {
-         return YES; // 强制启用自动主题
-     }
-     return %orig; // 保持原始逻辑
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoTheme"]) {
+		return YES; // 强制启用自动主题
+	}
+	return %orig; // 保持原始逻辑
 }
- 
+
 // 控制自动切换主题行为
 - (void)startAutoChangeThemeCanRequest:(BOOL)arg1 {
-     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoTheme"]) {
-         BOOL newArg = YES; // 创建新变量避免直接修改参数
-         %orig(newArg);     // 调用原始方法并传入新参数
-         return;
-     }
-     %orig(arg1); // 保持原始参数调用
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoTheme"]) {
+		BOOL newArg = YES;	  // 创建新变量避免直接修改参数
+		%orig(newArg); // 调用原始方法并传入新参数
+		return;
+	}
+	%orig(arg1); // 保持原始参数调用
 }
- 
+
 %end
 
-// 为 AWEUserActionSheetView 添加毛玻璃效果和白色文字
+// 为 AWEUserActionSheetView 添加毛玻璃效果
 %hook AWEUserActionSheetView
 
 - (void)layoutSubviews {
-    %orig;
-    [self applyBlurEffectAndWhiteText];
+	%orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableSheetBlur"]) {
+        [self applyBlurEffectAndWhiteText];
+    }
 }
-
-
 
 %new
 - (void)applyBlurEffectAndWhiteText {
-    // 应用毛玻璃效果到容器视图
-    if (self.containerView) {
-        self.containerView.backgroundColor = [UIColor clearColor];
-        
-        for (UIView *subview in self.containerView.subviews) {
-            if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 9999) {
-                [subview removeFromSuperview];
-            }
-        }
+	// 应用毛玻璃效果到容器视图
+	if (self.containerView) {
+		self.containerView.backgroundColor = [UIColor clearColor];
 
-        UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
-        UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-        blurEffectView.frame = self.containerView.bounds;
-        blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        blurEffectView.alpha = 0.85; 
-        blurEffectView.tag = 9999;
+		for (UIView *subview in self.containerView.subviews) {
+			if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 9999) {
+				[subview removeFromSuperview];
+			}
+		}
 
-        [self.containerView insertSubview:blurEffectView atIndex:0];
+		UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+		UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+		blurEffectView.frame = self.containerView.bounds;
+		blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+		blurEffectView.alpha = 0.9;
+		blurEffectView.tag = 9999;
 
-        [self setTextColorWhiteRecursivelyInView:self.containerView];
-        
-    }
+		[self.containerView insertSubview:blurEffectView atIndex:0];
+
+		[self setTextColorWhiteRecursivelyInView:self.containerView];
+	}
 }
 
 %new
 - (void)setTextColorWhiteRecursivelyInView:(UIView *)view {
-    for (UIView *subview in view.subviews) {
-        if (![subview isKindOfClass:[UIVisualEffectView class]]) {
-            subview.backgroundColor = [UIColor clearColor];
-        }
+	for (UIView *subview in view.subviews) {
+		if (![subview isKindOfClass:[UIVisualEffectView class]]) {
+			subview.backgroundColor = [UIColor clearColor];
+		}
 
-        if ([subview isKindOfClass:[UILabel class]]) {
-            UILabel *label = (UILabel *)subview;
-            label.textColor = [UIColor whiteColor];
-        }
+		if ([subview isKindOfClass:[UILabel class]]) {
+			UILabel *label = (UILabel *)subview;
+			label.textColor = [UIColor whiteColor];
+		}
 
-        if ([subview isKindOfClass:[UIButton class]]) {
-            UIButton *button = (UIButton *)subview;
-            [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-        }
-        
-        [self setTextColorWhiteRecursivelyInView:subview];
-    }
+		if ([subview isKindOfClass:[UIButton class]]) {
+			UIButton *button = (UIButton *)subview;
+			[button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+		}
+
+		[self setTextColorWhiteRecursivelyInView:subview];
+	}
 }
 %end
 
@@ -2099,6 +2132,43 @@ static CGFloat currentScale = 1.0;
 		[DYYYManager showToast:@"文案已复制到剪贴板"];
 	}
 }
+%end
+
+// 设置修改顶栏标题
+%hook AWEHPTopTabItemTextContentView
+
+- (void)layoutSubviews {
+    %orig;
+
+    NSString *topTitleConfig = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYModifyTopTabText"];
+    if (topTitleConfig.length == 0) return;
+
+    NSArray *titlePairs = [topTitleConfig componentsSeparatedByString:@"#"];
+
+    NSString *accessibilityLabel = nil;
+    if ([self.superview respondsToSelector:@selector(accessibilityLabel)]) {
+        accessibilityLabel = self.superview.accessibilityLabel;
+    }
+    if (accessibilityLabel.length == 0) return;
+
+    for (NSString *pair in titlePairs) {
+        NSArray *components = [pair componentsSeparatedByString:@"="];
+        if (components.count != 2) continue;
+
+        NSString *originalTitle = components[0];
+        NSString *newTitle = components[1];
+
+        if ([accessibilityLabel isEqualToString:originalTitle]) {
+            if ([self respondsToSelector:@selector(setContentText:)]) {
+                [self setContentText:newTitle];
+            } else {
+                [self setValue:newTitle forKey:@"contentText"];
+            }
+            break;
+        }
+    }
+}
+
 %end
 
 %ctor {

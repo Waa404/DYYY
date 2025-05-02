@@ -24,6 +24,46 @@
         confirmButtonText = @"确定";
     }
     
+    DYYYAlertActionHandler wrappedCancelAction = nil;
+    if (cancelAction) {
+        wrappedCancelAction = ^{
+            [self dismissAlertViewController:vc];
+            cancelAction();
+        };
+    } else {
+        wrappedCancelAction = ^{
+            [self dismissAlertViewController:vc];
+        };
+    }
+    
+    DYYYAlertActionHandler wrappedConfirmAction = nil;
+    if (confirmAction) {
+        wrappedConfirmAction = ^{
+            [self dismissAlertViewController:vc];
+            confirmAction();
+        };
+    } else {
+        wrappedConfirmAction = ^{
+            [self dismissAlertViewController:vc];
+        };
+    }
+    
+    // 设置滑动关闭和点击关闭的处理
+    [vc setSlideDismissBlock:^{
+        [self dismissAlertViewController:vc];
+    }];
+    
+    [vc setTapDismissBlock:^{
+        [self dismissAlertViewController:vc];
+    }];
+    
+    // 设置关闭后的回调
+    [vc setAfterDismissBlock:^{
+        if (vc.view.superview) {
+            [self dismissAlertViewController:vc];
+        }
+    }];
+    
     [vc configWithImageView:nil 
                   lockImage:nil 
            defaultLockState:NO 
@@ -31,8 +71,8 @@
           contentLabelText:message 
       leftCancelButtonText:cancelButtonText 
     rightConfirmButtonText:confirmButtonText 
-       rightBtnClickedBlock:confirmAction  // 直接传入回调，而不是nil
-      leftButtonClickedBlock:cancelAction];  // 直接传入回调，而不是nil
+       rightBtnClickedBlock:wrappedConfirmAction
+      leftButtonClickedBlock:wrappedCancelAction];
     
     // 设置圆角
     [vc setCornerRadius:16.0];
@@ -40,7 +80,7 @@
     
     [vc setUseCardUIStyle:YES];
 
-    // 使用 keyWindow 直接添加视图，而不是模态呈现
+    // 使用 keyWindow 直接添加视图
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
     [vc.view setFrame:window.bounds];
     [window addSubview:vc.view];
@@ -51,6 +91,15 @@
     [vc didMoveToParentViewController:topVC];
     
     return vc;
+}
+
+// 添加用于移除弹窗的辅助方法
++ (void)dismissAlertViewController:(UIViewController *)viewController {
+    if (!viewController) return;
+    
+    [viewController willMoveToParentViewController:nil];
+    [viewController.view removeFromSuperview];
+    [viewController removeFromParentViewController];
 }
 
 // 原始方法保持不变，维持向后兼容性
@@ -64,20 +113,6 @@
                    confirmButtonText:@"确定" 
                         cancelAction:cancelAction 
                        confirmAction:confirmAction];
-}
-
-// 修改 dismiss 方法的实现以适应新的显示方式
-- (void)dismiss {
-    UIResponder *responder = self;
-    while ((responder = [responder nextResponder])) {
-        if ([responder isKindOfClass:[UIViewController class]]) {
-            UIViewController *vc = (UIViewController *)responder;
-            [vc willMoveToParentViewController:nil];
-            [vc.view removeFromSuperview];
-            [vc removeFromParentViewController];
-            break;
-        }
-    }
 }
 
 @end

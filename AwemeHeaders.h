@@ -854,6 +854,9 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)setShouldShowToggle:(BOOL)arg1;
 - (NSUInteger)animationStyle;
 - (NSUInteger)viewStyle;
+- (void)setSlideDismissBlock:(void (^)(void))slideDismissBlock;
+- (void)setTapDismissBlock:(void (^)(void))tapDismissBlock;
+- (void)setAfterDismissBlock:(void (^)(void))afterDismissBlock;
 @end
 
 @interface AWELoadingAndVolumeView : UIView
@@ -871,4 +874,22 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, strong) BDImageView *content;
 @property (nonatomic, strong) AWEIMEmoticonModel *model;
 - (void)dyyy_saveButtonTapped:(id)sender;
+@end
+
+// 设置修改顶栏标题
+@interface AWEHPTopTabItemTextContentView : UIView
+- (void)setContentText:(NSString *)text;
+@end
+
+// 直播间商品信息
+@interface IESECLivePluginLayoutView : UIView
+@end
+
+// 直播间点赞动画
+@interface HTSLiveDiggView : UIView
+@end
+
+// 隐藏状态栏
+@interface AWEFeedRootViewController : UIViewController
+- (BOOL)prefersStatusBarHidden;
 @end
