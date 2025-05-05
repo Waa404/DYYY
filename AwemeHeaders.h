@@ -127,6 +127,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWENormalModeTabBarGeneralButton : UIButton
+@property (nonatomic) NSInteger status;
 @end
 
 @interface AWEHPTopTabItemBadgeContentView : UIView
@@ -221,6 +222,9 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWENormalModeTabBarTextView : UIView
 
+@end
+
+@interface AWEFamiliarNavView : UIView
 @end
 
 @interface AWEPlayInteractionNewBaseController : UIView
@@ -405,6 +409,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEHPTopTabItemModel : NSObject
 @property (nonatomic, copy) NSString *channelID;
 @property (nonatomic, copy) NSString *channelTitle;
+@property (nonatomic, copy) NSString *title;
 @end
 
 @interface AWEPlayInteractionStrongifyShareContentView : UIView
@@ -893,4 +898,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 // 隐藏状态栏
 @interface AWEFeedRootViewController : UIViewController
 - (BOOL)prefersStatusBarHidden;
+@end
+
+@interface AWEFeedUnfollowFamiliarFollowAndDislikeView : UIView
 @end
