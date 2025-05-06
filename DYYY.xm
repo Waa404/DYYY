@@ -114,81 +114,71 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %hook AWEFeedContainerContentView
 - (void)setAlpha:(CGFloat)alpha {
-	// 纯净模式功能
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnablePure"]) {
-		%orig(0.0);
-
-		static dispatch_source_t timer = nil;
-		static int attempts = 0;
-
-		if (timer) {
-			dispatch_source_cancel(timer);
-			timer = nil;
-		}
-
-		void (^tryFindAndSetPureMode)(void) = ^{
-		  UIWindow *keyWindow = [DYYYManager getActiveWindow];
-
-		  if (keyWindow && keyWindow.rootViewController) {
-			  UIViewController *feedVC = [self findViewController:keyWindow.rootViewController ofClass:NSClassFromString(@"AWEFeedTableViewController")];
-			  if (feedVC) {
-				  [feedVC setValue:@YES forKey:@"pureMode"];
-				  if (timer) {
-					  dispatch_source_cancel(timer);
-					  timer = nil;
-				  }
-				  attempts = 0;
-				  return;
-			  }
-		  }
-
-		  attempts++;
-		  if (attempts >= 10) {
-			  if (timer) {
-				  dispatch_source_cancel(timer);
-				  timer = nil;
-			  }
-			  attempts = 0;
-		  }
-		};
-
-		timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
-		dispatch_source_set_timer(timer, DISPATCH_TIME_NOW, 0.5 * NSEC_PER_SEC, 0);
-		dispatch_source_set_event_handler(timer, tryFindAndSetPureMode);
-		dispatch_resume(timer);
-
-		tryFindAndSetPureMode();
-		return;
-	}
-
-	// 原来的透明度设置逻辑，保持不变
-	NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"];
-	if (transparentValue && transparentValue.length > 0) {
-		CGFloat alphaValue = [transparentValue floatValue];
-		if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-			%orig(alphaValue);
-		} else {
-			%orig(1.0);
-		}
-	} else {
-		%orig(1.0);
-	}
+    // 纯净模式功能
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnablePure"]) {
+        %orig(0.0);
+        static dispatch_source_t timer = nil;
+        static int attempts = 0;
+        if (timer) {
+            dispatch_source_cancel(timer);
+            timer = nil;
+        }
+        void (^tryFindAndSetPureMode)(void) = ^{
+            UIWindow *keyWindow = [DYYYManager getActiveWindow];
+            if (keyWindow && keyWindow.rootViewController) {
+                UIViewController *feedVC = [self findViewController:keyWindow.rootViewController ofClass:NSClassFromString(@"AWEFeedTableViewController")];
+                if (feedVC) {
+                    [feedVC setValue:@YES forKey:@"pureMode"];
+                    if (timer) {
+                        dispatch_source_cancel(timer);
+                        timer = nil;
+                    }
+                    attempts = 0;
+                    return;
+                }
+            }
+            attempts++;
+            if (attempts >= 10) {
+                if (timer) {
+                    dispatch_source_cancel(timer);
+                    timer = nil;
+                }
+                attempts = 0;
+            }
+        };
+        timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+        dispatch_source_set_timer(timer, DISPATCH_TIME_NOW, 0.5 * NSEC_PER_SEC, 0);
+        dispatch_source_set_event_handler(timer, tryFindAndSetPureMode);
+        dispatch_resume(timer);
+        tryFindAndSetPureMode();
+        return;
+    }
+    // 原来的透明度设置逻辑，保持不变
+    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"];
+    if (transparentValue && transparentValue.length > 0) {
+        CGFloat alphaValue = [transparentValue floatValue];
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            CGFloat finalAlpha = (alphaValue < 0.011) ? 0.011 : alphaValue;
+            %orig(finalAlpha);
+        } else {
+            %orig(1.0);
+        }
+    } else {
+        %orig(1.0);
+    }
 }
-
 %new
 - (UIViewController *)findViewController:(UIViewController *)vc ofClass:(Class)targetClass {
-	if (!vc)
-		return nil;
-	if ([vc isKindOfClass:targetClass])
-		return vc;
-
-	for (UIViewController *childVC in vc.childViewControllers) {
-		UIViewController *found = [self findViewController:childVC ofClass:targetClass];
-		if (found)
-			return found;
-	}
-
-	return [self findViewController:vc.presentedViewController ofClass:targetClass];
+    if (!vc)
+        return nil;
+    if ([vc isKindOfClass:targetClass])
+        return vc;
+    for (UIViewController *childVC in vc.childViewControllers) {
+        UIViewController *found = [self findViewController:childVC ofClass:targetClass];
+        if (found)
+            return found;
+    }
+    return [self findViewController:vc.presentedViewController ofClass:targetClass];
 }
 %end
 
@@ -204,33 +194,36 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 }
 %new
 - (void)applyDYYYTransparency {
-	// 如果启用了纯净模式，不做任何处理
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnablePure"]) {
-		return;
-	}
-
-	NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"];
-	if (transparentValue && transparentValue.length > 0) {
-		CGFloat alphaValue = [transparentValue floatValue];
-		if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-			// 设置自身背景色的透明度
-			UIColor *backgroundColor = self.backgroundColor;
-			if (backgroundColor) {
-				CGFloat r, g, b, a;
-				if ([backgroundColor getRed:&r green:&g blue:&b alpha:&a]) {
-					self.backgroundColor = [UIColor colorWithRed:r green:g blue:b alpha:alphaValue * a];
-				}
-			}
-
-			// 使用类型转换确保编译器知道这是一个 UIView
-			[(UIView *)self setAlpha:alphaValue];
-
-			// 确保子视图不会叠加透明度
-			for (UIView *subview in self.subviews) {
-				subview.alpha = 1.0;
-			}
-		}
-	}
+    // 如果启用了纯净模式，不做任何处理
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnablePure"]) {
+        return;
+    }
+    
+    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"];
+    if (transparentValue && transparentValue.length > 0) {
+        CGFloat alphaValue = [transparentValue floatValue];
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            // 自己骗自己,透明度很小时使用0.011
+            CGFloat finalAlpha = (alphaValue < 0.011) ? 0.011 : alphaValue;
+            
+            // 设置自身背景色的透明度
+            UIColor *backgroundColor = self.backgroundColor;
+            if (backgroundColor) {
+                CGFloat r, g, b, a;
+                if ([backgroundColor getRed:&r green:&g blue:&b alpha:&a]) {
+                    self.backgroundColor = [UIColor colorWithRed:r green:g blue:b alpha:finalAlpha * a];
+                }
+            }
+            
+            // 设置视图的alpha
+            [(UIView *)self setAlpha:finalAlpha];
+            
+            // 确保子视图不会叠加透明度
+            for (UIView *subview in self.subviews) {
+                subview.alpha = 1.0;
+            }
+        }
+    }
 }
 %end
 
@@ -527,6 +520,39 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 }
 %end
 
+%hook AWEDPlayerFeedPlayerViewController
+
+- (void)viewDidLayoutSubviews {
+	%orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+		UIView *contentView = self.contentView;
+		if (contentView && contentView.superview) {
+			CGRect frame = contentView.frame;
+			CGFloat parentHeight = contentView.superview.frame.size.height;
+
+			if (frame.size.height == parentHeight - 83) {
+				frame.size.height = parentHeight;
+				contentView.frame = frame;
+				[contentView setNeedsLayout];
+				[contentView layoutIfNeeded];
+			}
+		}
+	}
+}
+
+- (void)setIsAutoPlay:(BOOL)arg0 {
+	float defaultSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"];
+
+	if (defaultSpeed > 0 && defaultSpeed != 1) {
+		[self setVideoControllerPlaybackRate:defaultSpeed];
+	}
+
+	%orig(arg0);
+}
+
+%end
+
 %hook UIView
 
 - (void)setFrame:(CGRect)frame {
@@ -541,7 +567,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 	}
 
 	UIViewController *vc = [self firstAvailableUIViewController];
-	if ([vc isKindOfClass:%c(AWEAwemePlayVideoViewController)]) {
+	if ([vc isKindOfClass:%c(AWEAwemePlayVideoViewController)] || [vc isKindOfClass:%c(AWEDPlayerFeedPlayerViewController)]) {
 
 		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"] && frame.origin.x != 0) {
 			return;
@@ -696,6 +722,21 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %end
 
 %hook AWEAwemeModel
+
+- (BOOL)awe_enableHDR {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        return NO;
+    }
+    return %orig;
+}
+
+- (id)awe_HDRValueFor:(NSInteger)arg1 {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        return nil;
+    }
+    return %orig;
+}
+
 - (id)initWithDictionary:(id)arg1 error:(id *)arg2 {
 	id orig = %orig;
 
@@ -1670,53 +1711,59 @@ static CGFloat currentScale = 1.0;
 }
 
 %end
-
 %hook AWEPlayInteractionDescriptionScrollView
 
 - (void)layoutSubviews {
-	%orig;
+    %orig;
+    
+    self.transform = CGAffineTransformIdentity;
+    
+    NSString *descriptionOffsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDescriptionVerticalOffset"];
+    CGFloat verticalOffset = 0;
+    if (descriptionOffsetValue.length > 0) {
+        verticalOffset = [descriptionOffsetValue floatValue];
+    }
+    
+    UIView *parentView = self.superview;
+    UIView *grandParentView = nil;
 
-	self.transform = CGAffineTransformIdentity;
-
-	// 添加文案垂直偏移支持
-	NSString *descriptionOffsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDescriptionVerticalOffset"];
-	CGFloat verticalOffset = 0;
-	if (descriptionOffsetValue.length > 0) {
-		verticalOffset = [descriptionOffsetValue floatValue];
-	}
-
-	UIView *parentView = self.superview;
-	UIView *grandParentView = nil;
-
-	if (parentView) {
-		grandParentView = parentView.superview;
-	}
+    if (parentView) {
+        grandParentView = parentView.superview;
+    }
+    
+    if (grandParentView && verticalOffset != 0) {
+        CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(0, verticalOffset);
+        grandParentView.transform = translationTransform;
+    }
 }
 
 %end
 
-// 对新版文案的缩放（33.0以上）
-
+// 对新版文案的偏移（33.0以上）
 %hook AWEPlayInteractionDescriptionLabel
 
 - (void)layoutSubviews {
-	%orig;
+    %orig;
+    
+    self.transform = CGAffineTransformIdentity;
+    
+    NSString *descriptionOffsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDescriptionVerticalOffset"];
+    CGFloat verticalOffset = 0;
+    if (descriptionOffsetValue.length > 0) {
+        verticalOffset = [descriptionOffsetValue floatValue];
+    }
+    
+    UIView *parentView = self.superview;
+    UIView *grandParentView = nil;
 
-	self.transform = CGAffineTransformIdentity;
-
-	// 添加文案垂直偏移支持
-	NSString *descriptionOffsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDescriptionVerticalOffset"];
-	CGFloat verticalOffset = 0;
-	if (descriptionOffsetValue.length > 0) {
-		verticalOffset = [descriptionOffsetValue floatValue];
-	}
-
-	UIView *parentView = self.superview;
-	UIView *grandParentView = nil;
-
-	if (parentView) {
-		grandParentView = parentView.superview;
-	}
+    if (parentView) {
+        grandParentView = parentView.superview;
+    }
+    
+    if (grandParentView && verticalOffset != 0) {
+        CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(0, verticalOffset);
+        grandParentView.transform = translationTransform;
+    }
 }
 
 %end
@@ -1868,6 +1915,8 @@ static CGFloat currentScale = 1.0;
 	;
 	;
 	;
+	;
+	;
 	NSURL *bestURL;
 	for (NSString *url in self.originURLList) {
 		if ([url containsString:@"video_mp4"] || [url containsString:@".jpeg"] || [url containsString:@".mp3"]) {
@@ -1887,12 +1936,12 @@ static CGFloat currentScale = 1.0;
 %hook AWENormalModeTabBarGeneralButton
 
 - (BOOL)enableRefresh {
-    if ([self.accessibilityLabel isEqualToString:@"首页"]) {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"]) {
-            return NO;
-        }
-    }
-    return %orig;
+	if ([self.accessibilityLabel isEqualToString:@"首页"]) {
+		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"]) {
+			return NO;
+		}
+	}
+	return %orig;
 }
 
 %end

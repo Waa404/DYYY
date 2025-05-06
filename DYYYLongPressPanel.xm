@@ -5,6 +5,7 @@
 #import "DYYYKeywordListView.h"
 #import "DYYYConfirmCloseView.h"
 #import "DYYYManager.h"
+#import "DYYYUtils.h"
 
 %hook AWELongPressPanelViewGroupModel
 %property(nonatomic, assign) BOOL isDYYYCustomGroup;
@@ -57,6 +58,7 @@
     BOOL hideSearchImage = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelSearchImage"];
     BOOL hideListenDouyin = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelListenDouyin"];
     BOOL hideBackgroundPlay = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBackgroundPlay"];
+    BOOL hideBiserial = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBiserial"];
     
     // 处理原始面板
     for (id group in originalArray) {
@@ -96,6 +98,10 @@
                         shouldHide = YES;
                     } else if ([descString isEqualToString:@"弹幕"] && hideSubtitle) {
                         shouldHide = YES;
+                    } else if ([descString isEqualToString:@"弹幕开关"] && hideSubtitle) {
+                        shouldHide = YES;
+                    } else if ([descString isEqualToString:@"弹幕设置"] && hideSubtitle) {
+                        shouldHide = YES;
                     } else if ([descString isEqualToString:@"自动连播"] && hideAutoPlay) {
                         shouldHide = YES;
                     } else if ([descString isEqualToString:@"识别图片"] && hideSearchImage) {
@@ -103,6 +109,8 @@
                     } else if ([descString isEqualToString:@"听抖音"] && hideListenDouyin) {
                         shouldHide = YES;
                     } else if ([descString isEqualToString:@"后台播放设置"] && hideBackgroundPlay) {
+                        shouldHide = YES;
+                    } else if ([descString isEqualToString:@"首页双列快捷入口"] && hideBiserial) {
                         shouldHide = YES;
                     }
                     
@@ -301,6 +309,28 @@
         [viewModels addObject:allImagesViewModel];
     }
     
+    // 接口保存功能
+    NSString *apiKey = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
+    if (enableApiDownload && apiKey.length > 0) {
+        AWELongPressPanelBaseViewModel *apiDownload = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
+        apiDownload.awemeModel = self.awemeModel;
+        apiDownload.actionType = 673;
+        apiDownload.duxIconName = @"ic_cloudarrowdown_outlined_20";
+        apiDownload.describeString = @"接口保存";
+        apiDownload.action = ^{
+            NSString *shareLink = [self.awemeModel valueForKey:@"shareURL"];
+            if (shareLink.length == 0) {
+                [DYYYManager showToast:@"无法获取分享链接"];
+                return;
+            }
+            // 使用封装的方法进行解析下载
+            [DYYYManager parseAndDownloadVideoWithShareLink:shareLink apiKey:apiKey];
+            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
+            [panelManager dismissWithAnimation:YES completion:nil];
+        };
+        [viewModels addObject:apiDownload];
+    }
+    
     // 复制文案功能
     if (enableCopyText) {
         AWELongPressPanelBaseViewModel *copyText = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
@@ -327,92 +357,13 @@
         copyShareLink.describeString = @"复制链接";
         copyShareLink.action = ^{
             NSString *shareLink = [self.awemeModel valueForKey:@"shareURL"];
-            [[UIPasteboard generalPasteboard] setString:shareLink];
+            NSString *cleanedURL = cleanShareURL(shareLink);
+            [[UIPasteboard generalPasteboard] setString:cleanedURL];
             [DYYYManager showToast:@"分享链接已复制到剪贴板"];
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
             [panelManager dismissWithAnimation:YES completion:nil];
         };
         [viewModels addObject:copyShareLink];
-    }
-    
-    // 接口保存功能
-    NSString *apiKey = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
-    if (enableApiDownload && apiKey.length > 0) {
-        AWELongPressPanelBaseViewModel *apiDownload = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
-        apiDownload.awemeModel = self.awemeModel;
-        apiDownload.actionType = 673;
-        apiDownload.duxIconName = @"ic_cloudarrowdown_outlined_20";
-        apiDownload.describeString = @"接口保存";
-        apiDownload.action = ^{
-            NSString *shareLink = [self.awemeModel valueForKey:@"shareURL"];
-            if (shareLink.length == 0) {
-                [DYYYManager showToast:@"无法获取分享链接"];
-                return;
-            }
-            // 使用封装的方法进行解析下载
-            [DYYYManager parseAndDownloadVideoWithShareLink:shareLink apiKey:apiKey];
-            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
-            [panelManager dismissWithAnimation:YES completion:nil];
-        };
-        [viewModels addObject:apiDownload];
-    }
-    
-    if (enableTimerClose) {
-        AWELongPressPanelBaseViewModel *timerCloseViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
-        timerCloseViewModel.awemeModel = self.awemeModel;
-        timerCloseViewModel.actionType = 676;
-        timerCloseViewModel.duxIconName = @"ic_c_alarm_outlined";
-        // 检查是否已有定时任务在运行
-        NSNumber *shutdownTime = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimerShutdownTime"];
-        BOOL hasActiveTimer = shutdownTime != nil && [shutdownTime doubleValue] > [[NSDate date] timeIntervalSince1970];
-        timerCloseViewModel.describeString = hasActiveTimer ? @"取消定时" : @"定时关闭";
-        timerCloseViewModel.action = ^{
-            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
-            [panelManager dismissWithAnimation:YES completion:nil];
-            NSNumber *shutdownTime = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimerShutdownTime"];
-            BOOL hasActiveTimer = shutdownTime != nil && [shutdownTime doubleValue] > [[NSDate date] timeIntervalSince1970];
-            if (hasActiveTimer) {
-                [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"DYYYTimerShutdownTime"];
-                [[NSUserDefaults standardUserDefaults] synchronize];
-                [DYYYManager showToast:@"已取消定时关闭任务"];
-                return;
-            }
-            // 读取上次设置的时间
-            NSInteger defaultMinutes = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYTimerCloseMinutes"];
-            if (defaultMinutes <= 0) {
-                defaultMinutes = 5;
-            }
-            NSString *defaultText = [NSString stringWithFormat:@"%ld", (long)defaultMinutes];
-            DYYYCustomInputView *inputView = [[DYYYCustomInputView alloc] initWithTitle:@"设置定时关闭时间" defaultText:defaultText placeholder:@"请输入关闭时间(单位:分钟)"];
-            inputView.onConfirm = ^(NSString *inputText) {
-                NSInteger minutes = [inputText integerValue];
-                if (minutes <= 0) {
-                    minutes = 5;
-                }
-                // 保存用户设置的时间以供下次使用
-                [[NSUserDefaults standardUserDefaults] setInteger:minutes forKey:@"DYYYTimerCloseMinutes"];
-                [[NSUserDefaults standardUserDefaults] synchronize];
-                NSInteger seconds = minutes * 60;
-                NSTimeInterval shutdownTimeValue = [[NSDate date] timeIntervalSince1970] + seconds;
-                [[NSUserDefaults standardUserDefaults] setObject:@(shutdownTimeValue) forKey:@"DYYYTimerShutdownTime"];
-                [[NSUserDefaults standardUserDefaults] synchronize];
-                [DYYYManager showToast:[NSString stringWithFormat:@"抖音将在%ld分钟后关闭...", (long)minutes]];
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(seconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                    NSNumber *currentShutdownTime = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimerShutdownTime"];
-                    if (currentShutdownTime != nil && [currentShutdownTime doubleValue] <= [[NSDate date] timeIntervalSince1970]) {
-                        [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"DYYYTimerShutdownTime"];
-                        [[NSUserDefaults standardUserDefaults] synchronize];
-                        // 显示确认关闭弹窗，而不是直接退出
-                        DYYYConfirmCloseView *confirmView = [[DYYYConfirmCloseView alloc]
-                                                            initWithTitle:@"定时关闭"
-                                                            message:@"定时关闭时间已到，是否关闭抖音？"];
-                        [confirmView show];
-                    }
-                });
-            };
-            [inputView show];
-        };
-        [viewModels addObject:timerCloseViewModel];
     }
     
     // 过滤用户功能
@@ -539,6 +490,64 @@
         [viewModels addObject:filterKeywords];
     }
     
+    if (enableTimerClose) {
+        AWELongPressPanelBaseViewModel *timerCloseViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
+        timerCloseViewModel.awemeModel = self.awemeModel;
+        timerCloseViewModel.actionType = 676;
+        timerCloseViewModel.duxIconName = @"ic_c_alarm_outlined";
+        // 检查是否已有定时任务在运行
+        NSNumber *shutdownTime = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimerShutdownTime"];
+        BOOL hasActiveTimer = shutdownTime != nil && [shutdownTime doubleValue] > [[NSDate date] timeIntervalSince1970];
+        timerCloseViewModel.describeString = hasActiveTimer ? @"取消定时" : @"定时关闭";
+        timerCloseViewModel.action = ^{
+            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
+            [panelManager dismissWithAnimation:YES completion:nil];
+            NSNumber *shutdownTime = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimerShutdownTime"];
+            BOOL hasActiveTimer = shutdownTime != nil && [shutdownTime doubleValue] > [[NSDate date] timeIntervalSince1970];
+            if (hasActiveTimer) {
+                [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"DYYYTimerShutdownTime"];
+                [[NSUserDefaults standardUserDefaults] synchronize];
+                [DYYYManager showToast:@"已取消定时关闭任务"];
+                return;
+            }
+            // 读取上次设置的时间
+            NSInteger defaultMinutes = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYTimerCloseMinutes"];
+            if (defaultMinutes <= 0) {
+                defaultMinutes = 5;
+            }
+            NSString *defaultText = [NSString stringWithFormat:@"%ld", (long)defaultMinutes];
+            DYYYCustomInputView *inputView = [[DYYYCustomInputView alloc] initWithTitle:@"设置定时关闭时间" defaultText:defaultText placeholder:@"请输入关闭时间(单位:分钟)"];
+            inputView.onConfirm = ^(NSString *inputText) {
+                NSInteger minutes = [inputText integerValue];
+                if (minutes <= 0) {
+                    minutes = 5;
+                }
+                // 保存用户设置的时间以供下次使用
+                [[NSUserDefaults standardUserDefaults] setInteger:minutes forKey:@"DYYYTimerCloseMinutes"];
+                [[NSUserDefaults standardUserDefaults] synchronize];
+                NSInteger seconds = minutes * 60;
+                NSTimeInterval shutdownTimeValue = [[NSDate date] timeIntervalSince1970] + seconds;
+                [[NSUserDefaults standardUserDefaults] setObject:@(shutdownTimeValue) forKey:@"DYYYTimerShutdownTime"];
+                [[NSUserDefaults standardUserDefaults] synchronize];
+                [DYYYManager showToast:[NSString stringWithFormat:@"抖音将在%ld分钟后关闭...", (long)minutes]];
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(seconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                    NSNumber *currentShutdownTime = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimerShutdownTime"];
+                    if (currentShutdownTime != nil && [currentShutdownTime doubleValue] <= [[NSDate date] timeIntervalSince1970]) {
+                        [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"DYYYTimerShutdownTime"];
+                        [[NSUserDefaults standardUserDefaults] synchronize];
+                        // 显示确认关闭弹窗，而不是直接退出
+                        DYYYConfirmCloseView *confirmView = [[DYYYConfirmCloseView alloc]
+                                                            initWithTitle:@"定时关闭"
+                                                            message:@"定时关闭时间已到，是否关闭抖音？"];
+                        [confirmView show];
+                    }
+                });
+            };
+            [inputView show];
+        };
+        [viewModels addObject:timerCloseViewModel];
+    }
+    
     NSMutableArray<AWELongPressPanelViewGroupModel *> *customGroups = [NSMutableArray array];
     NSInteger totalButtons = viewModels.count;
     
@@ -588,7 +597,7 @@
     }
     
     return [customGroups arrayByAddingObjectsFromArray:modifiedArray];
-}
+    }
 %end
 
 // 修复Modern风格长按面板水平设置单元格的大小计算
@@ -630,7 +639,9 @@
     if (!originalArray) {
         originalArray = @[];
     }
-    
+    if (!self.awemeModel.author.nickname) {
+        return originalArray;
+    }
     // 检查是否启用了任意长按功能
     BOOL hasAnyFeatureEnabled = NO;
     
@@ -678,6 +689,7 @@
     BOOL hideSearchImage = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelSearchImage"];
     BOOL hideListenDouyin = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelListenDouyin"];
     BOOL hideBackgroundPlay = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBackgroundPlay"];
+    BOOL hideBiserial = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBiserial"];
     
     // 处理原始面板
     for (id group in originalArray) {
@@ -717,6 +729,10 @@
                         shouldHide = YES;
                     } else if ([descString isEqualToString:@"弹幕"] && hideSubtitle) {
                         shouldHide = YES;
+                    } else if ([descString isEqualToString:@"弹幕开关"] && hideSubtitle) {
+                        shouldHide = YES;
+                    } else if ([descString isEqualToString:@"弹幕设置"] && hideSubtitle) {
+                        shouldHide = YES;
                     } else if ([descString isEqualToString:@"自动连播"] && hideAutoPlay) {
                         shouldHide = YES;
                     } else if ([descString isEqualToString:@"识别图片"] && hideSearchImage) {
@@ -724,6 +740,8 @@
                     } else if ([descString isEqualToString:@"听抖音"] && hideListenDouyin) {
                         shouldHide = YES;
                     } else if ([descString isEqualToString:@"后台播放设置"] && hideBackgroundPlay) {
+                        shouldHide = YES;
+                    } else if ([descString isEqualToString:@"首页双列快捷入口"] && hideBiserial) {
                         shouldHide = YES;
                     }
                     
@@ -953,7 +971,8 @@
         copyShareLink.describeString = @"复制链接";
         copyShareLink.action = ^{
             NSString *shareLink = [self.awemeModel valueForKey:@"shareURL"];
-            [[UIPasteboard generalPasteboard] setString:shareLink];
+            NSString *cleanedURL = cleanShareURL(shareLink);
+            [[UIPasteboard generalPasteboard] setString:cleanedURL];
             [DYYYManager showToast:@"分享链接已复制到剪贴板"];
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
             [panelManager dismissWithAnimation:YES completion:nil];

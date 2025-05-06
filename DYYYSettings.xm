@@ -626,7 +626,12 @@ static void showUserAgreementAlert() {
 			      @"title" : @"去青少年弹窗",
 			      @"detail" : @"",
 			      @"cellType" : @6,
-			      @"imageName" : @"ic_personcircleclean_outlined_20"}
+			      @"imageName" : @"ic_personcircleclean_outlined_20"},
+				@{@"identifier" : @"DYYYDisableHDR",
+			      @"title" : @"关闭HDR效果",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_video_outlined_20"}
 		    ];
 
 		    for (NSDictionary *dict in filterSettings) {
@@ -1023,6 +1028,11 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHideMyButton",
+			      @"title" : @"隐藏底栏我的",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
 			    @{@"identifier" : @"DYYYHideTopBarBadge",
 			      @"title" : @"隐藏顶栏红点",
 			      @"detail" : @"",
@@ -1347,6 +1357,11 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHideChapterProgress",
+			      @"title" : @"隐藏章节进度",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
 			    @{@"identifier" : @"DYYYHidePrivateMessages",
 			      @"title" : @"隐藏分享私信",
 			      @"detail" : @"",
@@ -1516,8 +1531,14 @@ static void showUserAgreementAlert() {
 			      @"title" : @"隐藏面板后台播放",
 			      @"detail" : @"",
 			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			     @{@"identifier" : @"DYYYHidePanelBiserial",
+			      @"title" : @"隐藏双列快捷入口",
+			      @"detail" : @"",
+			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"}
 		    ];
+		    
 		    for (NSDictionary *dict in modernpanelSettings) {
 			    AWESettingItemModel *item = [self createSettingItem:dict];
 			    [modernpanels addObject:item];
@@ -3110,7 +3131,7 @@ static void showUserAgreementAlert() {
 			  setUserDefaults(@(isSwitchOn), strongItem.identifier);
 
 			  if ([strongItem.identifier isEqualToString:@"DYYYForceDownloadEmotion"] && isSwitchOn) {
-				  showAboutDialog(@"防蠢提示", @"这里指的是长按整条评论而非表情图片！", nil);
+				  showAboutDialog(@"防蠢提示", @"这里指的是长按整条评论而非表情图片！\n", nil);
 			  }
 			  if ([strongItem.identifier isEqualToString:@"DYYYisEnableCommentBlur"] && isSwitchOn) {
 				  showAboutDialog(@"提示", @"评论区毛玻璃效果与调整评论区透明度功能\n不可同时生效，只能二选一。", nil);
