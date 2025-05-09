@@ -1764,7 +1764,7 @@ static void showUserAgreementAlert() {
 		    // 获取当前热更新状态
 		    abTestBlockEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYABTestBlockEnabled"];
 		    AWESettingItemModel *disableHotUpdateItem = [[%c(AWESettingItemModel) alloc] init];
-		    disableHotUpdateItem.identifier = @"DYYYABTestBlockEnabled";
+		    disableHotUpdateItem.identifier = @"ABTestBlockEnabled";
 		    disableHotUpdateItem.title = @"禁用下发配置";
 		    disableHotUpdateItem.detail = @"";
 		    disableHotUpdateItem.type = 1000;
@@ -1792,7 +1792,7 @@ static void showUserAgreementAlert() {
 				    disableHotUpdateItem.isSwitchOn = newValue;
 				    abTestBlockEnabled = newValue;
 
-				    [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"ABTestBlockEnabled"];
+				    [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"DYYYABTestBlockEnabled"];
 				    [[NSUserDefaults standardUserDefaults] synchronize];
 
 				    // 重置全局变量，下次加载时会重新读取文件
@@ -1807,7 +1807,7 @@ static void showUserAgreementAlert() {
 			      disableHotUpdateItem.isSwitchOn = newValue;
 			      abTestBlockEnabled = newValue;
 
-			      [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"ABTestBlockEnabled"];
+			      [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"DYYYABTestBlockEnabled"];
 			      [[NSUserDefaults standardUserDefaults] synchronize];
 
 			      [self refreshTableView];
@@ -1996,6 +1996,11 @@ static void showUserAgreementAlert() {
 			      @"imageName" : @"ic_at_outlined_20"},
 			    @{@"identifier" : @"DYYYisEnableModern",
 			      @"title" : @"启用新版玻璃面板",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_gearsimplify_outlined_20"},
+			    @{@"identifier" : @"DYYYPanelcells",
+			      @"title" : @"启用新面板单元格",
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_gearsimplify_outlined_20"},
@@ -2392,12 +2397,8 @@ static void showUserAgreementAlert() {
 			      @"title" : @"调整输入框透明度",
 			      @"detail" : @"0-1小数",
 			      @"cellType" : @26,
-			      @"imageName" : @"ic_msg_outlined_20"},
-			    @{@"identifier" : @"WaaEnableHomeFullScreen",
-			      @"title" : @"启用主页视频全屏",
-			      @"detail" : @"",
-			      @"cellType" : @6,
-			      @"imageName" : @"ic_fullscreen_outlined_16"}
+			      @"imageName" : @"ic_msg_outlined_20"}
+
 		    ];
 
 		    for (NSDictionary *dict in UISettings) {
@@ -2426,10 +2427,32 @@ static void showUserAgreementAlert() {
 			    [HideItems addObject:item];
 		    }
 
+		    // 【增强设置】分类
+		    NSMutableArray<AWESettingItemModel *> *EnhancedItems = [NSMutableArray array];
+		    NSArray * EnhancedSettings = @[
+			    @{@"identifier" : @"WaaEnableHomeFullScreen",
+			      @"title" : @"启用主页视频全屏",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_fullscreen_outlined_16"},
+			    @{@"identifier" : @"WaaFollowfix",
+			      @"title" : @"修复关注二次确认",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_userplus_outlined_20"}
+
+		    ];
+
+		    for (NSDictionary *dict in EnhancedSettings) {
+			    AWESettingItemModel *item = [self createSettingItem:dict cellTapHandlers:cellTapHandlers];
+			    [EnhancedItems addObject:item];
+		    }
+
 		    // 创建并组织所有section
 		    NSMutableArray *sections = [NSMutableArray array];
 		    [sections addObject:createSection(@"外观设置", UIItems)];
 		    [sections addObject:createSection(@"隐藏设置", HideItems)];
+		    [sections addObject:createSection(@"增强设置", EnhancedItems)];
 
 		    // 创建并推入二级设置页面
 		    AWESettingBaseViewController *subVC = createSubSettingsViewController(@"WaaHook", sections);

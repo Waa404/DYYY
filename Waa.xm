@@ -263,6 +263,58 @@ BOOL isTargetCommentSubview(UIView *view) {
 
 %end
 
+#pragma mark - 隐藏功能
+
+// 搜索/他人主页底部评论框背景透明
+@interface AWECommentInputBackgroundView : UIView
+@end
+
+%hook AWECommentInputBackgroundView
+
+- (void)layoutSubviews {
+    %orig;
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"WaaHideChatCommentBg"]) {
+        for (UIView *subview in self.subviews) {
+            if ([NSStringFromClass([subview class]) isEqualToString:@"AWECommentInputViewSwiftImpl.CommentInputContainerView"]) {
+                if (subview.subviews.count > 0) {
+                    UIView *targetView = subview.subviews.firstObject;
+                    targetView.alpha = 0;
+                }
+                break;
+            }
+        }
+    }
+}
+
+%end
+
+// 隐藏双指清屏进度条
+@interface AWEStoryProgressContainerView : UIView 
+@end
+
+%hook AWEStoryProgressContainerView
+
+- (void)layoutSubviews {
+    %orig;
+
+    BOOL isHidePurityRrogress = [[NSUserDefaults standardUserDefaults] boolForKey:@"WaaHidePurityRrogress"];
+    if (!isHidePurityRrogress) return;
+
+    UIWindow *window = self.window;
+    if (!window) return;
+
+    CGRect frameInWindow = [self convertRect:self.bounds toView:window];
+    CGFloat screenHeight = UIScreen.mainScreen.bounds.size.height;
+
+    BOOL shouldHide = CGRectGetMinY(frameInWindow) >= screenHeight * 0.95;
+    self.hidden = shouldHide;
+}
+
+%end
+
+#pragma mark - 增强功能
+
 // 他人主页视频全屏
 static CGFloat kOriginalCellHeight = 0;
 static CGFloat kLatestCellHeight = 0;
@@ -365,62 +417,14 @@ static BOOL ViewJudgment = NO;
 
 %end
 
-#pragma mark - 隐藏功能
-
-// 搜索/他人主页底部评论框背景透明
-@interface AWECommentInputBackgroundView : UIView
-@end
-
-%hook AWECommentInputBackgroundView
-
-- (void)layoutSubviews {
-    %orig;
-
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"WaaHideChatCommentBg"]) {
-        for (UIView *subview in self.subviews) {
-            if ([NSStringFromClass([subview class]) isEqualToString:@"AWECommentInputViewSwiftImpl.CommentInputContainerView"]) {
-                if (subview.subviews.count > 0) {
-                    UIView *targetView = subview.subviews.firstObject;
-                    targetView.alpha = 0;
-                }
-                break;
-            }
-        }
-    }
-}
-
-%end
-
-// 隐藏双指清屏进度条
-@interface AWEStoryProgressContainerView : UIView 
-@end
-
-%hook AWEStoryProgressContainerView
-
-- (void)layoutSubviews {
-    %orig;
-
-    BOOL isHidePurityRrogress = [[NSUserDefaults standardUserDefaults] boolForKey:@"WaaHidePurityRrogress"];
-    if (!isHidePurityRrogress) return;
-
-    UIWindow *window = self.window;
-    if (!window) return;
-
-    CGRect frameInWindow = [self convertRect:self.bounds toView:window];
-    CGFloat screenHeight = UIScreen.mainScreen.bounds.size.height;
-
-    BOOL shouldHide = CGRectGetMinY(frameInWindow) >= screenHeight * 0.95;
-    self.hidden = shouldHide;
-}
-
-%end
-
-#pragma mark - 增强功能
-
 // 修复关注二次确认
 %hook UITapGestureRecognizer
 
 - (void)setState:(UIGestureRecognizerState)state {
+
+    BOOL isFollowfix = [[NSUserDefaults standardUserDefaults] boolForKey:@"WaaFollowfix"];
+    if (!isFollowfix) return;
+
     if (state == UIGestureRecognizerStateEnded) {
         UIView *targetView = self.view;
         if ([targetView isKindOfClass:NSClassFromString(@"AWEPlayInteractionFollowPromptView")] || 

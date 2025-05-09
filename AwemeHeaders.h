@@ -215,7 +215,8 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEPlayInteractionFollowPromptView : UIView
-
+ - (void)handleTapWithConfirmation:(UITapGestureRecognizer *)gesture;
+ - (void)performOriginalTapAction;
 @end
 
 @interface AWENormalModeTabBarTextView : UIView
@@ -285,7 +286,12 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (UILabel *)findCommentLabel:(UIView *)view;
 @end
 
+// 隐藏视频定位
 @interface AWEFeedTemplateAnchorView : UIView
+@end
+
+// 隐藏同城定位
+@interface AWEMarkView : UIView
 @end
 
 @interface AWEPlayInteractionSearchAnchorView : UIView
