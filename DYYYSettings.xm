@@ -1074,7 +1074,7 @@ static void showUserAgreementAlert() {
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"},
 			    @{@"identifier" : @"DYYYHideGroupInputActionBar",
-			      @"title" : @"隐藏群聊页工具栏",
+			      @"title" : @"隐藏聊天页工具栏",
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"},
@@ -1994,6 +1994,11 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_at_outlined_20"},
+			    @{@"identifier" : @"DYYYisAutoSelectOriginalPhoto",
+			      @"title" : @"启用自动勾选原图",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_gearsimplify_outlined_20"},
 			    @{@"identifier" : @"DYYYisEnableModern",
 			      @"title" : @"启用新版玻璃面板",
 			      @"detail" : @"",
@@ -2310,9 +2315,7 @@ static void showUserAgreementAlert() {
 			    if (size >= 20 && size <= 60) {
 				    [[NSUserDefaults standardUserDefaults] setFloat:size forKey:@"DYYYEnableFloatClearButtonSize"];
 				    [[NSUserDefaults standardUserDefaults] synchronize];
-				    // 更新UI显示
 				    clearButtonSizeItem.detail = [NSString stringWithFormat:@"%.0f", (CGFloat)size];
-				    // 刷新表格
 				    [self refreshTableView];
 			    } else {
 				    [DYYYManager showToast:@"请输入20-60之间的有效数值"];
@@ -2722,7 +2725,6 @@ static void showUserAgreementAlert() {
 		  cleanCacheItem.cellType = 26;
 		  cleanCacheItem.colorStyle = 0;
 		  cleanCacheItem.isEnable = YES;
-
 		  cleanCacheItem.cellTappedBlock = ^{
 		    [DYYYBottomAlertView showAlertWithTitle:@"清理缓存"
 						    message:@"确定要清理缓存吗？\n这将删除临时文件和缓存"
@@ -2731,40 +2733,26 @@ static void showUserAgreementAlert() {
 					       cancelAction:nil
 					      confirmAction:^{
 						NSFileManager *fileManager = [NSFileManager defaultManager];
-						NSError *error = nil;
 						NSUInteger totalSize = 0;
 
+						// 临时目录
 						NSString *tempDir = NSTemporaryDirectory();
 
+						// Library目录下的缓存目录
 						NSArray<NSString *> *customDirs = @[ @"Caches", @"BDByteCast", @"kitelog" ];
 						NSString *libraryDir = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES).firstObject;
 
-						NSMutableArray<NSString *> *allPaths = [NSMutableArray arrayWithObjects:tempDir, nil];
+						NSMutableArray<NSString *> *allPaths = [NSMutableArray arrayWithObject:tempDir];
 						for (NSString *sub in customDirs) {
-							NSString *full = [libraryDir stringByAppendingPathComponent:sub];
-							[allPaths addObject:full];
+							NSString *fullPath = [libraryDir stringByAppendingPathComponent:sub];
+							if ([fileManager fileExistsAtPath:fullPath]) {
+								[allPaths addObject:fullPath];
+							}
 						}
 
+						// 遍历所有目录并清理
 						for (NSString *basePath in allPaths) {
-							if (![fileManager fileExistsAtPath:basePath]) {
-								continue;
-							}
-							NSDirectoryEnumerator<NSString *> *enumerator = [fileManager enumeratorAtPath:basePath];
-							NSString *relPath = nil;
-							while ((relPath = [enumerator nextObject])) {
-								NSString *fullPath = [basePath stringByAppendingPathComponent:relPath];
-
-								NSDictionary<NSFileAttributeKey, id> *attrs = [fileManager attributesOfItemAtPath:fullPath error:nil];
-								if (attrs) {
-									totalSize += [attrs fileSize];
-								}
-
-								NSError *delErr = nil;
-								[fileManager removeItemAtPath:fullPath error:&delErr];
-								if (delErr) {
-									NSLog(@"删除失败 %@: %@", fullPath, delErr);
-								}
-							}
+							totalSize += [DYYYUtils clearDirectoryContents:basePath];
 						}
 
 						float sizeInMB = totalSize / 1024.0 / 1024.0;

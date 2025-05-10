@@ -261,6 +261,12 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEFeedTableView : UIView
 @end
 
+@interface AWEAwemeDetailTableView : UIView
+@end
+
+@interface AWEAwemeDetailTableViewCell : UIView
+@end
+
 @interface IESLiveFeedDrawerEntranceView : UIView
 @end
 
@@ -290,6 +296,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 // 隐藏同城定位
 @interface AWEMarkView : UIView
+@property(nonatomic, readonly) UILabel *markLabel;
 @end
 
 @interface AWEPlayInteractionSearchAnchorView : UIView
@@ -397,6 +404,9 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property(nonatomic, strong) UIView *leftLabelUI;
 @property(nonatomic, strong) UIView *rightLabelUI;
 @property(nonatomic) AWEPlayInteractionProgressController *progressSliderDelegate;
+
+- (void)applyCustomProgressStyle;
+- (void)applyWidthPercentToSubviews:(CGFloat)widthPercent;
 @end
 
 @interface AWEFeedChannelObject : NSObject
@@ -636,10 +646,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEUserSheetAction : NSObject
 + (instancetype)actionWithTitle:(NSString *)title imgName:(NSString *)imgName handler:(id)handler;
 + (instancetype)actionWithTitle:(NSString *)title style:(NSUInteger)style imgName:(NSString *)imgName handler:(id)handler;
-@end
-
-@interface AWEFeedProgressSlider (CustomAdditions)
-- (void)applyCustomProgressStyle;
 @end
 
 @interface AWEPlayInteractionDescriptionScrollView : UIScrollView

@@ -113,7 +113,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 			}
 		}
 	}
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
 		NSString *className = NSStringFromClass([self class]);
 		if ([className isEqualToString:@"AWECommentInputViewSwiftImpl.CommentInputContainerView"]) {
 			for (UIView *subview in self.subviews) {
@@ -192,11 +192,25 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %end
 
+%hook AWEPlayInteractionViewController
+- (void)viewDidLayoutSubviews {
+	%orig;
+	if (![self.parentViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
+		return;
+	}
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+		CGRect frame = self.view.frame;
+		frame.size.height = self.view.superview.frame.size.height - 83;
+		self.view.frame = frame;
+	}
+}
+
+%end
+
 %hook AWEDPlayerFeedPlayerViewController
 
 - (void)viewDidLayoutSubviews {
 	%orig;
-
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
 		UIView *contentView = self.contentView;
 		if (contentView && contentView.superview) {
@@ -206,8 +220,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 			if (frame.size.height == parentHeight - 83) {
 				frame.size.height = parentHeight;
 				contentView.frame = frame;
-				[contentView setNeedsLayout];
-				[contentView layoutIfNeeded];
 			}
 		}
 	}
@@ -238,8 +250,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 	}
 }
 %end
-
-
 
 %hook AWEElementStackView
 static CGFloat stream_frame_y = 0;
@@ -394,13 +404,6 @@ static CGAffineTransform lockedLeftTransform;
     }
 }
 
-- (void)animateTransform:(CGAffineTransform)transform duration:(double)duration {
-    if ([self.accessibilityLabel isEqualToString:@"left"] && leftTransformLocked) {
-        return;
-    }
-    %orig;
-}
-
 %end
 
 
@@ -484,21 +487,6 @@ static CGAffineTransform lockedLeftTransform;
 	%orig;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenEntry"]) {
 		[self removeFromSuperview];
-	}
-}
-
-%end
-
-%hook AWEPlayInteractionViewController
-- (void)viewDidLayoutSubviews {
-	%orig;
-	if (![self.parentViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
-		return;
-	}
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		CGRect frame = self.view.frame;
-		frame.size.height = self.view.superview.frame.size.height - 83;
-		self.view.frame = frame;
 	}
 }
 
