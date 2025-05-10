@@ -418,18 +418,15 @@ static BOOL ViewJudgment = NO;
 %end
 
 // 修复关注二次确认
+%group WaaFollowfixGroup
 %hook UITapGestureRecognizer
 
 - (void)setState:(UIGestureRecognizerState)state {
-
-    BOOL isFollowfix = [[NSUserDefaults standardUserDefaults] boolForKey:@"WaaFollowfix"];
-    if (!isFollowfix) return;
-
     if (state == UIGestureRecognizerStateEnded) {
         UIView *targetView = self.view;
         if ([targetView isKindOfClass:NSClassFromString(@"AWEPlayInteractionFollowPromptView")] || 
             [targetView.superview isKindOfClass:NSClassFromString(@"AWEPlayInteractionFollowPromptView")]) {
-            
+
             if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
                 dispatch_async(dispatch_get_main_queue(), ^{
                     [DYYYBottomAlertView showAlertWithTitle:@"关注确认" 
@@ -449,3 +446,12 @@ static BOOL ViewJudgment = NO;
 }
 
 %end
+%end
+
+%ctor {
+    %init;
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"WaaFollowfix"]) {
+        %init(WaaFollowfixGroup);
+    }
+}

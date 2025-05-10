@@ -346,9 +346,10 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
             [DYYYSettingItem itemWithTitle:@"自定评论文字颜色" key:@"WaaCommentColor" type:DYYYSettingItemTypeTextField placeholder:@"十六进制"],
             [DYYYSettingItem itemWithTitle:@"调整评论区透明度" key:@"WaaCommentTransparency" type:DYYYSettingItemTypeTextField placeholder:@"0-1小数"],
             [DYYYSettingItem itemWithTitle:@"调整输入框透明度" key:@"WaaInputBoxTransparency" type:DYYYSettingItemTypeTextField placeholder:@"0-1小数"],
-            [DYYYSettingItem itemWithTitle:@"启用主页视频全屏" key:@"WaaEnableHomeFullScreen" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"隐藏视频评论背景" key:@"WaaHideChatCommentBg" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏双指清屏进度" key:@"WaaHidePurityRrogress" type:DYYYSettingItemTypeSwitch]
+            [DYYYSettingItem itemWithTitle:@"隐藏双指清屏进度" key:@"WaaHidePurityRrogress" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"启用主页视频全屏" key:@"WaaEnableHomeFullScreen" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"修复关注二次确认" key:@"WaaFollowfix" type:DYYYSettingItemTypeSwitch]
 
         ]
     ];
