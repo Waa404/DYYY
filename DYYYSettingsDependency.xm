@@ -49,6 +49,10 @@ static void setUserDefaults(id object, NSString *key) {
 			  @"DYYYEnabshijianjindu" : @[ @"DYYYHideTimeProgress" ],
 			  @"DYYYHideTimeProgress" : @[ @"DYYYEnabshijianjindu" ]
 		  },
+		  // 当源设置项关闭时，会自动关闭目标设置项
+		  @"conflicts2" : @{
+    		  @"DYYYisEnableFullScreen" : @[ @"WaaHidePurityRrogress" ]
+		  },
 
 		  // ===== 互斥激活配置 =====
 		  // 当源设置项关闭时，目标设置项才能激活
@@ -147,6 +151,7 @@ static void setUserDefaults(id object, NSString *key) {
 %new
 - (void)handleConflictsAndDependenciesForSetting:(NSString *)identifier isEnabled:(BOOL)isEnabled {
 	NSDictionary *conflicts = [self settingsDependencyConfig][@"conflicts"];
+	NSDictionary *conflicts2 = [self settingsDependencyConfig][@"conflicts2"];
 	NSDictionary *dependencies = [self settingsDependencyConfig][@"dependencies"];
 	if (isEnabled) {
 		NSArray *conflictingItems = conflicts[identifier];
@@ -159,6 +164,17 @@ static void setUserDefaults(id object, NSString *key) {
 				[self updateConflictingItemUIState:conflictItem withValue:NO];
 			}
 		}
+	} else {
+    	NSArray *conflicting2Items = conflicts2[identifier];
+    	if (conflicting2Items) {
+        	for (NSString *conflict2Item in conflicting2Items) {
+            	// 更新NSUserDefaults
+            	setUserDefaults(@(NO), conflict2Item);
+
+            	// 立即更新互斥项的UI状态
+            	[self updateConflictingItemUIState:conflict2Item withValue:NO];
+      	    }
+    	}
 	}
 
 	[self updateDependentItemsForSetting:identifier value:@(isEnabled)];
