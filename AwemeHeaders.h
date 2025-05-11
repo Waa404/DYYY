@@ -718,6 +718,9 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEHPTopBarCTAItemView : UIView
 @end
 
+@interface AWEVideoPlayDanmakuContainerView : UIView
+@end
+
 // 应用内推送容器
 @interface AWEInnerNotificationWindow : UIWindow
 - (void)setupBlurEffectForNotificationView;
@@ -772,11 +775,14 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (AWESettingItemModel *)createSettingItem:(NSDictionary *)dict;
 - (AWESettingItemModel *)createSettingItem:(NSDictionary *)dict cellTapHandlers:(NSMutableDictionary *)cellTapHandlers;
 
-- (void)applyDependencyRulesForItem:(AWESettingItemModel *)item;
 - (void)refreshTableView;
 - (void)updateSectionDataArray;
 - (void)handleConflictsAndDependenciesForSetting:(NSString *)identifier isEnabled:(BOOL)isEnabled;
 - (void)updateDependentItemsForSetting:(NSString *)identifier value:(id)value;
+- (void)handleConflictsAndDependenciesForSetting:(NSString *)identifier isEnabled:(BOOL)isEnabled;
+- (void)applyDependencyRulesForItem:(AWESettingItemModel *)item;
+- (void)updateConflictingItemUIState:(NSString *)identifier withValue:(BOOL)value;
+- (NSDictionary *)settingsDependencyConfig;
 @end
 
 @interface AWENavigationBar : UIView
@@ -912,6 +918,10 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (BOOL)prefersStatusBarHidden;
 @end
 
+@interface IESLiveAudienceViewController : UIView
+- (BOOL)prefersStatusBarHidden;
+@end
+
 @interface AWEFeedUnfollowFamiliarFollowAndDislikeView : UIView
 @end
 
@@ -939,7 +949,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEDemaciaChapterProgressSlider : UIView
 @end
 
-//HDR
+// HDR
 @interface AWEHDRModelManager : NSObject
 + (BOOL)enableVideoHDR;
 + (BOOL)useOneKeyHDR;
