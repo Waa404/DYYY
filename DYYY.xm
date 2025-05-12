@@ -15,34 +15,6 @@
 
 #import "DYYYConstants.h"
 
-%hook AWEDPlayerFeedPlayerViewController
-
-- (void)setIsAutoPlay:(BOOL)arg0 {
-	float defaultSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"];
-
-	if (defaultSpeed > 0 && defaultSpeed != 1) {
-		[self setVideoControllerPlaybackRate:defaultSpeed];
-	}
-
-	%orig(arg0);
-}
-
-%end
-
-%hook AWEAwemePlayVideoViewController
-
-- (void)setIsAutoPlay:(BOOL)arg0 {
-	float defaultSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"];
-
-	if (defaultSpeed > 0 && defaultSpeed != 1) {
-		[self setVideoControllerPlaybackRate:defaultSpeed];
-	}
-
-	%orig(arg0);
-}
-
-%end
-
 %hook AWEPlayInteractionUserAvatarElement
 - (void)onFollowViewClicked:(UITapGestureRecognizer *)gesture {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
@@ -501,23 +473,7 @@
 %end
 
 %hook UIView
-
-- (void)setAlpha:(CGFloat)alpha {
-	UIViewController *vc = [self firstAvailableUIViewController];
-
-	if (([vc isKindOfClass:%c(AWEPlayInteractionViewController)] || [vc isKindOfClass:%c(AWELiveNewPreStreamViewController)]) && alpha > 0) {
-		NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
-		if (transparentValue.length > 0) {
-			CGFloat alphaValue = transparentValue.floatValue;
-			if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-				%orig(alphaValue);
-				return;
-			}
-		}
-	}
-	%orig;
-}
-
+//关键方法,误删！
 %new
 - (UIViewController *)firstAvailableUIViewController {
 	UIResponder *responder = [self nextResponder];
@@ -528,6 +484,60 @@
 		responder = [responder nextResponder];
 	}
 	return nil;
+}
+
+%end
+
+//重写全局透明方法
+%hook AWEPlayInteractionViewController
+
+- (UIView *)view {
+    UIView *originalView = %orig;
+
+    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+    if (transparentValue.length > 0) {
+        CGFloat alphaValue = transparentValue.floatValue;
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            for (UIView *subview in originalView.subviews) {
+                subview.alpha = alphaValue;
+            }
+        }
+    }
+
+    return originalView;
+}
+
+%end
+
+//处理视频流直播文案透明度
+%hook AWEElementStackView
+
+- (void)setAlpha:(CGFloat)alpha {
+    UIViewController *vc = [self firstAvailableUIViewController];
+    
+    if ([vc isKindOfClass:%c(AWELiveNewPreStreamViewController)] && alpha > 0) {
+        NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+        if (transparentValue.length > 0) {
+            CGFloat alphaValue = transparentValue.floatValue;
+            if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+                %orig(alphaValue);
+                return;
+            }
+        }
+    }
+    %orig;
+}
+
+%new
+- (UIViewController *)firstAvailableUIViewController {
+    UIResponder *responder = [self nextResponder];
+    while (responder != nil) {
+        if ([responder isKindOfClass:[UIViewController class]]) {
+            return (UIViewController *)responder;
+        }
+        responder = [responder nextResponder];
+    }
+    return nil;
 }
 
 %end
@@ -879,6 +889,18 @@
 %end
 
 %hook AWEFeedModuleService
+
+- (BOOL)getFeedIphoneAutoPlayState {
+	BOOL r = %orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"]) {
+		return YES;
+	}
+	return %orig;
+}
+%end
+
+%hook AWEFeedIPhoneAutoPlayManager
 
 - (BOOL)getFeedIphoneAutoPlayState {
 	BOOL r = %orig;
@@ -1307,9 +1329,6 @@
 // 获取资源的地址
 %hook AWEURLModel
 %new - (NSURL *)getDYYYSrcURLDownload {
-	;
-	;
-	;
 	NSURL *bestURL;
 	for (NSString *url in self.originURLList) {
 		if ([url containsString:@"video_mp4"] || [url containsString:@".jpeg"] || [url containsString:@".mp3"]) {
@@ -1503,11 +1522,17 @@
 			}
 		}
 
+		// 动态获取用户设置的透明度
+		float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYSheetBlurTransparent"] floatValue];
+		if (userTransparency <= 0 || userTransparency > 1) {
+			userTransparency = 0.9; // 默认值0.9
+		}
+
 		UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
 		UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
 		blurEffectView.frame = self.containerView.bounds;
 		blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-		blurEffectView.alpha = 0.9;
+		blurEffectView.alpha = userTransparency; // 设置为用户自定义透明度
 		blurEffectView.tag = 9999;
 
 		[self.containerView insertSubview:blurEffectView atIndex:0];
@@ -1573,14 +1598,6 @@
 		return YES;
 	}
 	return %orig;
-}
-
-%end
-
-%hook AWESharePanelStyleOptionsManager
-
-+ (unsigned long long)styleOptionsOfContext:(id)context {
-	return 101;
 }
 
 %end

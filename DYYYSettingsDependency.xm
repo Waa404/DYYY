@@ -47,7 +47,9 @@ static void setUserDefaults(id object, NSString *key) {
 			  @"DYYYABTestBlockEnabled" : @[ @"DYYYABTestPatchEnabled" ],
 			  @"DYYYABTestPatchEnabled" : @[ @"DYYYABTestBlockEnabled" ],
 			  @"DYYYEnabshijianjindu" : @[ @"DYYYHideTimeProgress" ],
-			  @"DYYYHideTimeProgress" : @[ @"DYYYEnabshijianjindu" ]
+			  @"DYYYHideTimeProgress" : @[ @"DYYYEnabshijianjindu" ],
+			  @"DYYYHideLOTAnimationView" : @[ @"DYYYHideFollowPromptView" ],
+			  @"DYYYHideFollowPromptView" : @[ @"DYYYHideLOTAnimationView" ]
 		  },
 		  // 当源设置项关闭时，会自动关闭目标设置项
 		  @"conflicts2" : @{
@@ -63,7 +65,9 @@ static void setUserDefaults(id object, NSString *key) {
 			  @"DYYYABTestPatchEnabled" : @[ @"DYYYABTestBlockEnabled" ],
 			  @"DYYYEnabshijianjindu" : @[ @"DYYYHideTimeProgress" ],
 			  @"DYYYHideTimeProgress" : @[ @"DYYYEnabshijianjindu" ],
-			  @"DYYYisEnableCommentBlur" : @[ @"WaaCommentTransparency", @"WaaInputBoxTransparency" ]
+			  @"DYYYisEnableCommentBlur" : @[ @"WaaCommentTransparency", @"WaaInputBoxTransparency" ],
+			  @"DYYYHideLOTAnimationView" : @[ @"DYYYHideFollowPromptView" ],
+			  @"DYYYHideFollowPromptView" : @[ @"DYYYHideLOTAnimationView" ]
 		  },
 
 		  // ===== 值依赖配置 =====
@@ -235,6 +239,7 @@ static void setUserDefaults(id object, NSString *key) {
 	NSDictionary *mutualExclusive = [self settingsDependencyConfig][@"mutualExclusive"];
 	NSDictionary *valueDependencies = [self settingsDependencyConfig][@"valueDependencies"];
 	NSDictionary *conflicts = [self settingsDependencyConfig][@"conflicts"];
+	NSDictionary *conflicts2 = [self settingsDependencyConfig][@"conflicts2"];
 
 	UIViewController *topVC = topView();
 	AWESettingBaseViewController *settingsVC = nil;
@@ -273,6 +278,11 @@ static void setUserDefaults(id object, NSString *key) {
 	NSArray *conflictItems = conflicts[identifier];
 	if (conflictItems) {
 		[itemsToUpdate addObjectsFromArray:conflictItems];
+	}
+
+	NSArray *conflict2Items = conflicts2[identifier];
+	if (conflict2Items) {
+		[itemsToUpdate addObjectsFromArray:conflict2Items];
 	}
 
 	for (NSString *targetItem in conditionalDependencies) {
