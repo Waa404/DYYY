@@ -774,16 +774,6 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"0-1小数",
 			      @"cellType" : @26,
 			      @"imageName" : @"ic_eye_outlined_20"},
-				@{@"identifier" : @"DYYYisEnableSheetBlur",
-				  @"title" : @"下载菜单玻璃",
-				  @"detail" : @"",
-				  @"cellType" : @6,
-				  @"imageName" : @"ic_list_outlined"},
-				@{@"identifier" : @"DYYYSheetBlurTransparent",
-				  @"title" : @"毛玻璃透明度",
-				  @"detail" : @"0-1小数",
-				  @"cellType" : @26,
-				  @"imageName" : @"ic_eye_outlined_20"},
 			    @{@"identifier" : @"DYYYEnableNotificationTransparency",
 			      @"title" : @"通知玻璃效果",
 			      @"detail" : @"",
@@ -2026,23 +2016,12 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_comment_outlined_20"},
-			    @{@"identifier" : @"DYYYEnableDoubleOpenAlertController",
-				  @"title" : @"启用双击打开菜单",
-				  @"detail" : @"",
-				  @"cellType" : @26,
-				  @"imageName" : @"ic_xiaoxihuazhonghua_outlined_20"
-			    },
-				@{@"identifier" : @"DYYYAllowConcurrentPlay",
-				  @"title" : @"允许应用同时播放",
-				  @"detail" : @"",
-				  @"cellType" : @6,
-				  @"imageName" : @"ic_vertrianglesquareonsquare_outlined_20"
-			    },
-				@{@"identifier" : @"DYYYHapticFeedbackEnabled",
-				  @"title" : @"下载完成震动反馈",
-				  @"detail" : @"",
-				  @"cellType" : @6,
-				  @"imageName" : @"ic_gearsimplify_outlined_20"
+			    @{
+				    @"identifier" : @"DYYYEnableDoubleOpenAlertController",
+				    @"title" : @"启用双击打开菜单",
+				    @"detail" : @"",
+				    @"cellType" : @26,
+				    @"imageName" : @"ic_xiaoxihuazhonghua_outlined_20"
 			    }
 		    ];
 
@@ -2068,6 +2047,11 @@ static void showUserAgreementAlert() {
 				      [doubleTapItems addObject:enableDoubleTapMenu];
 
 				      NSArray *doubleTapFunctions = @[
+					      @{@"identifier" : @"DYYYisEnableSheetBlur",
+						@"title" : @"菜单玻璃效果",
+						@"detail" : @"",
+						@"cellType" : @6,
+						@"imageName" : @"ic_list_outlined"},
 					      @{@"identifier" : @"DYYYDoubleTapDownload",
 						@"title" : @"保存视频/图片",
 						@"detail" : @"",
@@ -2359,6 +2343,22 @@ static void showUserAgreementAlert() {
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"}];
 		    [clearButtonItems addObject:enableqingButton1];
+			AWESettingItemModel *hideSliderButton = [self
+			createSettingItem:
+			    @{@"identifier" : @"DYYYHideSlider",
+			      @"title" : @"清屏隐藏滑条",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"}];
+		    [clearButtonItems addObject:hideSliderButton];
+			AWESettingItemModel *hideTabButton = [self
+			createSettingItem:
+			    @{@"identifier" : @"DYYYHideTabBar",
+			      @"title" : @"清屏隐藏底栏",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"}];
+		    [clearButtonItems addObject:hideTabButton];
 		    // 获取清屏按钮的当前开关状态
 		    BOOL isEnabled = getUserDefaults(@"DYYYEnableFloatClearButton");
 		    // 更新清屏按钮大小和图标设置项的启用状态

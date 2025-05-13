@@ -256,20 +256,9 @@ static CGFloat stream_frame_y = 0;
 static CGFloat right_tx = 0;
 static CGFloat left_tx = 0;
 static CGFloat currentScale = 1.0;
-static BOOL leftTransformLocked = NO;
-static CGAffineTransform lockedLeftTransform;
-static BOOL vcTransformLocked = NO;
-static CGAffineTransform lockedVCTransform;
 
 - (void)layoutSubviews {
-
-    if ([self.accessibilityLabel isEqualToString:@"left"] && leftTransformLocked) {
-        self.transform = lockedLeftTransform;
-        return;
-    }
-    
     %orig;
-
 	//处理视频流直播间文案缩放
 	UIResponder *nextResponder = [self nextResponder];
 	if ([nextResponder isKindOfClass:[UIView class]]) {
@@ -299,12 +288,7 @@ static CGAffineTransform lockedVCTransform;
 					newTransform = CGAffineTransformTranslate(newTransform, tx / scale, ty / scale);
 
 					self.transform = newTransform;
-
-					vcTransformLocked = YES;
-					lockedVCTransform = newTransform;
-				} else {
-					vcTransformLocked = NO;
-				}
+				} 
 			}
 		}
 	}
@@ -381,22 +365,8 @@ static CGAffineTransform lockedVCTransform;
                 newTransform = CGAffineTransformTranslate(newTransform, left_tx/scale, ty/scale);
                 
                 self.transform = newTransform;
-                
-                leftTransformLocked = YES;
-                lockedLeftTransform = newTransform;
-
-            } else {
-                leftTransformLocked = NO;
-            }
+            } 
         }
-    }
-}
-
-- (void)setTransform:(CGAffineTransform)transform {
-    if ([self.accessibilityLabel isEqualToString:@"left"] && leftTransformLocked) {
-        %orig(lockedLeftTransform);
-    } else {
-        %orig;
     }
 }
 
