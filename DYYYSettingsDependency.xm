@@ -49,7 +49,9 @@ static void setUserDefaults(id object, NSString *key) {
 			  @"DYYYEnabshijianjindu" : @[ @"DYYYHideTimeProgress" ],
 			  @"DYYYHideTimeProgress" : @[ @"DYYYEnabshijianjindu" ],
 			  @"DYYYHideLOTAnimationView" : @[ @"DYYYHideFollowPromptView" ],
-			  @"DYYYHideFollowPromptView" : @[ @"DYYYHideLOTAnimationView" ]
+			  @"DYYYHideFollowPromptView" : @[ @"DYYYHideLOTAnimationView" ],
+			  @"DYYYisEnableModern" : @[ @"DYYYisEnableModernLight" ],
+			  @"DYYYisEnableModernLight" : @[ @"DYYYisEnableModern" ]
 		  },
 		  // 当源设置项关闭时，会自动关闭目标设置项
 		  @"conflicts2" : @{
