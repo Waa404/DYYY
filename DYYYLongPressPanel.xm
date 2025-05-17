@@ -34,10 +34,11 @@
     BOOL enableFilterUser = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressFilterUser"];
     BOOL enableFilterKeyword = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressFilterTitle"];
     BOOL enableTimerClose = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressTimerClose"];
+    BOOL enableCreateVideo = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressCreateVideo"];
     
     // 检查是否有任何功能启用
     hasAnyFeatureEnabled = enableSaveVideo || enableSaveCover || enableSaveAudio || enableSaveCurrentImage || enableSaveAllImages || enableCopyText || enableCopyLink || enableApiDownload ||
-                           enableFilterUser || enableFilterKeyword || enableTimerClose;
+                           enableFilterUser || enableFilterKeyword || enableTimerClose || enableCreateVideo;
     
     // 处理原始面板按钮的显示/隐藏
     NSMutableArray *officialButtons = [NSMutableArray array];
@@ -59,9 +60,6 @@
     BOOL hideListenDouyin = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelListenDouyin"];
     BOOL hideBackgroundPlay = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBackgroundPlay"];
     BOOL hideBiserial = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBiserial"];
-    
-    // 检查是否启用了重组官方按钮
-    BOOL reorganizeOfficialButtons = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYPanelcells"];
     
     // 存储处理后的原始组
     NSMutableArray *modifiedOriginalGroups = [NSMutableArray array];
@@ -143,8 +141,8 @@
                 }
             }
             
-            // 如果过滤后的组不为空且不需要重组官方按钮，则保存原始组结构
-            if (!reorganizeOfficialButtons && filteredGroupArr.count > 0) {
+            // 如果过滤后的组不为空，则保存原始组结构
+            if (filteredGroupArr.count > 0) {
                 AWELongPressPanelViewGroupModel *newGroup = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
                 newGroup.isDYYYCustomGroup = YES;
                 newGroup.groupType = groupModel.groupType;
@@ -157,29 +155,8 @@
     
     // 如果没有任何功能启用，仅使用官方按钮
     if (!hasAnyFeatureEnabled) {
-        if (!reorganizeOfficialButtons) {
-            // 如果不需要重组官方按钮，直接返回修改后的原始组
-            return modifiedOriginalGroups;
-        } else {
-            // 否则重新组织官方按钮，每行最多4个
-            NSMutableArray *resultArray = [NSMutableArray array];
-            NSInteger maxButtonsPerRow = 4; // 每行最多4个按钮
-            NSInteger totalOfficialButtons = officialButtons.count;
-            
-            for (NSInteger i = 0; i < totalOfficialButtons; i += maxButtonsPerRow) {
-                NSInteger buttonsInThisRow = MIN(maxButtonsPerRow, totalOfficialButtons - i);
-                NSRange range = NSMakeRange(i, buttonsInThisRow);
-                
-                AWELongPressPanelViewGroupModel *newGroup = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
-                newGroup.isDYYYCustomGroup = YES;
-                newGroup.groupType = (buttonsInThisRow <= 3) ? 11 : 12;
-                newGroup.isModern = YES;
-                newGroup.groupArr = [officialButtons subarrayWithRange:range];
-                [resultArray addObject:newGroup];
-            }
-            
-            return resultArray;
-        }
+        // 直接返回修改后的原始组
+        return modifiedOriginalGroups;
     }
     
     // 创建自定义功能按钮
@@ -436,6 +413,80 @@
             [panelManager dismissWithAnimation:YES completion:nil];
         };
         [viewModels addObject:audioViewModel];
+    }
+
+    // 创建视频功能
+    if (enableCreateVideo && self.awemeModel.awemeType == 68 && self.awemeModel.albumImages.count > 1) {
+        AWELongPressPanelBaseViewModel *createVideoViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
+        createVideoViewModel.awemeModel = self.awemeModel;
+        createVideoViewModel.actionType = 677;
+        createVideoViewModel.duxIconName = @"ic_videosearch_outlined_20";
+        createVideoViewModel.describeString = @"制作视频";
+        createVideoViewModel.action = ^{
+            AWEAwemeModel *awemeModel = self.awemeModel;
+            
+            // 收集普通图片URL
+            NSMutableArray *imageURLs = [NSMutableArray array];
+            // 收集实况照片信息（图片URL+视频URL）
+            NSMutableArray *livePhotos = [NSMutableArray array];
+            
+            // 获取背景音乐URL
+            NSString *bgmURL = nil;
+            if (awemeModel.music && awemeModel.music.playURL && awemeModel.music.playURL.originURLList.count > 0) {
+                bgmURL = awemeModel.music.playURL.originURLList.firstObject;
+            }
+            
+            // 处理所有图片和实况
+            for (AWEImageAlbumImageModel *imageModel in awemeModel.albumImages) {
+                if (imageModel.urlList.count > 0) {
+                    // 查找非.image后缀的URL
+                    NSString *bestURL = nil;
+                    for (NSString *urlString in imageModel.urlList) {
+                        NSURL *url = [NSURL URLWithString:urlString];
+                        NSString *pathExtension = [url.path.lowercaseString pathExtension];
+                        if (![pathExtension isEqualToString:@"image"]) {
+                            bestURL = urlString;
+                            break;
+                        }
+                    }
+                    
+                    if (!bestURL && imageModel.urlList.count > 0) {
+                        bestURL = imageModel.urlList.firstObject;
+                    }
+                    
+                    // 如果是实况照片，需要收集图片和视频URL
+                    if (imageModel.clipVideo != nil) {
+                        NSURL *videoURL = [imageModel.clipVideo.playURL getDYYYSrcURLDownload];
+                        if (videoURL) {
+                            [livePhotos addObject:@{
+                                @"imageURL": bestURL,
+                                @"videoURL": videoURL.absoluteString
+                            }];
+                        }
+                    } else {
+                        // 普通图片
+                        [imageURLs addObject:bestURL];
+                    }
+                }
+            }
+            
+            // 调用视频创建API
+            [DYYYManager createVideoFromMedia:imageURLs
+                                   livePhotos:livePhotos
+                                       bgmURL:bgmURL
+                                     progress:^(NSInteger current, NSInteger total, NSString *status) {
+                                     }
+                                   completion:^(BOOL success, NSString *message) {
+                                         if (success) {
+                                         } else {
+                                             [DYYYManager showToast:[NSString stringWithFormat:@"视频制作失败: %@", message]];
+                                         }
+                                     }];
+            
+            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
+            [panelManager dismissWithAnimation:YES completion:nil];
+        };
+        [viewModels addObject:createVideoViewModel];
     }
 
     // 复制文案功能
@@ -708,27 +759,8 @@
     // 准备最终结果数组
     NSMutableArray *resultArray = [NSMutableArray arrayWithArray:customGroups];
     
-    // 根据开关决定如何处理官方按钮
-    if (!reorganizeOfficialButtons) {
-        // 如果不需要重组官方按钮，直接添加修改后的原始组
-        [resultArray addObjectsFromArray:modifiedOriginalGroups];
-    } else {
-        // 否则重新组织官方按钮，每行最多4个
-        NSInteger maxButtonsPerRow = 4; // 每行最多4个按钮
-        NSInteger totalOfficialButtons = officialButtons.count;
-        
-        for (NSInteger i = 0; i < totalOfficialButtons; i += maxButtonsPerRow) {
-            NSInteger buttonsInThisRow = MIN(maxButtonsPerRow, totalOfficialButtons - i);
-            NSRange range = NSMakeRange(i, buttonsInThisRow);
-            
-            AWELongPressPanelViewGroupModel *officialGroup = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
-            officialGroup.isDYYYCustomGroup = YES; // 标记为自定义组以便应用自定义样式
-            officialGroup.groupType = (buttonsInThisRow <= 3) ? 11 : 12;
-            officialGroup.isModern = YES;
-            officialGroup.groupArr = [officialButtons subarrayWithRange:range];
-            [resultArray addObject:officialGroup];
-        }
-    }
+    // 添加修改后的原始组
+    [resultArray addObjectsFromArray:modifiedOriginalGroups];
     
     return resultArray;
 }
@@ -792,25 +824,11 @@
     BOOL enableFilterUser = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressFilterUser"];
     BOOL enableFilterKeyword = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressFilterTitle"];
     BOOL enableTimerClose = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressTimerClose"];
-    
-    // 兼容旧版设置
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressDownload"]) {
-        if (!enableSaveVideo && !enableSaveCover && !enableSaveAudio && !enableSaveCurrentImage && !enableSaveAllImages) {
-            enableSaveVideo = enableSaveCover = enableSaveAudio = enableSaveCurrentImage = enableSaveAllImages = YES;
-        }
-    }
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYCopyText"]) {
-        if (!enableCopyText && !enableCopyLink) {
-            enableCopyText = enableCopyLink = YES;
-        }
-    }
-    
-    // 检查是否启用了重组官方按钮 - 修正逻辑
-    BOOL reorganizeOfficialButtons = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYPanelcells"];
-    
+    BOOL enableCreateVideo = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressCreateVideo"];
+
     // 检查是否有任何功能启用
     hasAnyFeatureEnabled = enableSaveVideo || enableSaveCover || enableSaveAudio || enableSaveCurrentImage || enableSaveAllImages || enableCopyText || enableCopyLink || enableApiDownload ||
-                           enableFilterUser || enableFilterKeyword || enableTimerClose;
+                           enableFilterUser || enableFilterKeyword || enableTimerClose || enableCreateVideo;
     
     // 处理原始面板按钮的显示/隐藏
     NSMutableArray *modifiedArray = [NSMutableArray array];
@@ -832,7 +850,7 @@
     BOOL hideListenDouyin = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelListenDouyin"];
     BOOL hideBackgroundPlay = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBackgroundPlay"];
     BOOL hideBiserial = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBiserial"];
-    
+
     // 收集所有未被隐藏的官方按钮
     NSMutableArray *officialButtons = [NSMutableArray array];
     
@@ -915,8 +933,8 @@
                     [filteredGroupArr addObject:item];
                 }
             }
-            // 如果过滤后的数组不为空，且不需要重组官方按钮，则保留原始结构
-            if (!reorganizeOfficialButtons && filteredGroupArr.count > 0) {
+            // 如果过滤后的数组不为空，则保留原始结构
+            if (filteredGroupArr.count > 0) {
                 AWELongPressPanelViewGroupModel *newGroup = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
                 newGroup.groupType = groupModel.groupType;
                 newGroup.groupArr = filteredGroupArr;
@@ -930,16 +948,7 @@
     
     // 如果没有任何功能启用，返回修改后的原始数组
     if (!hasAnyFeatureEnabled) {
-        if (!reorganizeOfficialButtons) {
-            // 如果不需要重组官方按钮，返回修改后的原始组
-            return modifiedArray;
-        } else {
-            // 如果需要重组官方按钮，将所有官方按钮重新排列
-            AWELongPressPanelViewGroupModel *newGroup = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
-            newGroup.groupType = 0;
-            newGroup.groupArr = officialButtons;
-            return @[newGroup];
-        }
+        return modifiedArray;
     }
     
     // 创建自定义功能组
@@ -1179,6 +1188,80 @@
             [panelManager dismissWithAnimation:YES completion:nil];
         };
         [viewModels addObject:allImagesViewModel];
+    }
+    
+        // 创建视频功能
+    if (enableCreateVideo && self.awemeModel.awemeType == 68 && self.awemeModel.albumImages.count > 1) {
+        AWELongPressPanelBaseViewModel *createVideoViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
+        createVideoViewModel.awemeModel = self.awemeModel;
+        createVideoViewModel.actionType = 677;
+        createVideoViewModel.duxIconName = @"ic_videosearch_outlined_20";
+        createVideoViewModel.describeString = @"制作视频";
+        createVideoViewModel.action = ^{
+            AWEAwemeModel *awemeModel = self.awemeModel;
+            
+            // 收集普通图片URL
+            NSMutableArray *imageURLs = [NSMutableArray array];
+            // 收集实况照片信息（图片URL+视频URL）
+            NSMutableArray *livePhotos = [NSMutableArray array];
+            
+            // 获取背景音乐URL
+            NSString *bgmURL = nil;
+            if (awemeModel.music && awemeModel.music.playURL && awemeModel.music.playURL.originURLList.count > 0) {
+                bgmURL = awemeModel.music.playURL.originURLList.firstObject;
+            }
+            
+            // 处理所有图片和实况
+            for (AWEImageAlbumImageModel *imageModel in awemeModel.albumImages) {
+                if (imageModel.urlList.count > 0) {
+                    // 查找非.image后缀的URL
+                    NSString *bestURL = nil;
+                    for (NSString *urlString in imageModel.urlList) {
+                        NSURL *url = [NSURL URLWithString:urlString];
+                        NSString *pathExtension = [url.path.lowercaseString pathExtension];
+                        if (![pathExtension isEqualToString:@"image"]) {
+                            bestURL = urlString;
+                            break;
+                        }
+                    }
+                    
+                    if (!bestURL && imageModel.urlList.count > 0) {
+                        bestURL = imageModel.urlList.firstObject;
+                    }
+                    
+                    // 如果是实况照片，需要收集图片和视频URL
+                    if (imageModel.clipVideo != nil) {
+                        NSURL *videoURL = [imageModel.clipVideo.playURL getDYYYSrcURLDownload];
+                        if (videoURL) {
+                            [livePhotos addObject:@{
+                                @"imageURL": bestURL,
+                                @"videoURL": videoURL.absoluteString
+                            }];
+                        }
+                    } else {
+                        // 普通图片
+                        [imageURLs addObject:bestURL];
+                    }
+                }
+            }
+            
+            // 调用视频创建API
+            [DYYYManager createVideoFromMedia:imageURLs
+                                   livePhotos:livePhotos
+                                       bgmURL:bgmURL
+                                     progress:^(NSInteger current, NSInteger total, NSString *status) {
+                                     }
+                                   completion:^(BOOL success, NSString *message) {
+                                         if (success) {
+                                         } else {
+                                             [DYYYManager showToast:[NSString stringWithFormat:@"视频制作失败: %@", message]];
+                                         }
+                                     }];
+            
+            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
+            [panelManager dismissWithAnimation:YES completion:nil];
+        };
+        [viewModels addObject:createVideoViewModel];
     }
     
     // 复制文案功能
@@ -1429,24 +1512,13 @@
     
     newGroupModel.groupArr = viewModels;
     
-    // 根据开关决定返回结果
-    if (!reorganizeOfficialButtons) {
-        // 如果不需要重组官方按钮，将自定义组添加到原始组之前
-        if (modifiedArray.count > 0) {
-            NSMutableArray *resultArray = [modifiedArray mutableCopy];
-            [resultArray insertObject:newGroupModel atIndex:0];
-            return [resultArray copy];
-        } else {
-            return @[ newGroupModel ];
-        }
+    // 返回自定义组+原始组的结果
+    if (modifiedArray.count > 0) {
+        NSMutableArray *resultArray = [modifiedArray mutableCopy];
+        [resultArray insertObject:newGroupModel atIndex:0];
+        return [resultArray copy];
     } else {
-        // 如果需要重组官方按钮，创建一个新组包含所有官方按钮
-        AWELongPressPanelViewGroupModel *officialGroupModel = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
-        officialGroupModel.groupType = 0;
-        officialGroupModel.groupArr = officialButtons;
-        
-        // 返回自定义组和重组后的官方按钮组
-        return @[ newGroupModel, officialGroupModel ];
+        return @[ newGroupModel ];
     }
 }
 %end
