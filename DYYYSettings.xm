@@ -556,6 +556,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_video_outlined_20"},
+		  @{@"identifier" : @"DYYYEnableVideoHighestQuality",
+		    @"title" : @"视频默认最高画质",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_video_outlined_20"},
 		  @{@"identifier" : @"DYYYDisableLivePCDN",
 		    @"title" : @"屏蔽直播PCDN功能",
 		    @"detail" : @"",
@@ -799,7 +804,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"不填默认",
 		    @"cellType" : @26,
 		    @"imageName" : @"ic_msg_outlined_20"},
-		  @{@"identifier" : @"DYYYDYYYSettingsHelperTitle",
+		  @{@"identifier" : @"DYYYSelfTitle",
 		    @"title" : @"设置我的标题",
 		    @"detail" : @"不填默认",
 		    @"cellType" : @26,
@@ -1640,6 +1645,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	enhanceSettingItem.isEnable = YES;
 	enhanceSettingItem.cellTappedBlock = ^{
 	  // 创建增强设置二级界面的设置项
+	  NSMutableDictionary *cellTapHandlers = [NSMutableDictionary dictionary];
 
 	  // 【长按面板设置】分类
 	  NSMutableArray<AWESettingItemModel *> *longPressItems = [NSMutableArray array];
@@ -1670,7 +1676,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_boxarrowdown_outlined"},
 		  @{@"identifier" : @"DYYYLongPressCreateVideo",
-		    @"title" : @"长按保存生成视频",
+		    @"title" : @"长按面板生成视频",
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_videosearch_outlined_20"},
@@ -1724,6 +1730,16 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_hamburgernut_outlined_20"},
+		  @{@"identifier" : @"DYYYisEnableSheetBlur",
+			@"title" : @"保存面板玻璃效果",
+			@"detail" : @"",
+			@"cellType" : @6,
+			@"imageName" : @"ic_list_outlined"},
+		  @{@"identifier" : @"DYYYSheetBlurTransparent",
+			@"title" : @"面板毛玻璃透明度",
+			@"detail" : @"0-1小数",
+			@"cellType" : @26,
+			@"imageName" : @"ic_eye_outlined_20"},
 		  @{@"identifier" : @"DYYYCommentLivePhotoNotWaterMark",
 		    @"title" : @"移除评论实况水印",
 		    @"detail" : @"",
@@ -1743,11 +1759,17 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"title" : @"保存预览页表情包",
 		    @"detail" : @"",
 		    @"cellType" : @6,
-		    @"imageName" : @"ic_emoji_outlined"}
+		    @"imageName" : @"ic_emoji_outlined"},
+		  @{@"identifier" : @"DYYYHapticFeedbackEnabled",
+			@"title" : @"下载完成震动反馈",
+			@"detail" : @"",
+			@"cellType" : @6,
+			@"imageName" : @"ic_gearsimplify_outlined_20"
+			}
 	  ];
 
 	  for (NSDictionary *dict in downloadSettings) {
-		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict];
+		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict cellTapHandlers:cellTapHandlers];
 
 		  // 特殊处理接口解析保存媒体选项
 		  if ([item.identifier isEqualToString:@"DYYYInterfaceDownload"]) {
@@ -1772,7 +1794,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 							  onCancel:nil];
 			  };
 		  }
-
 		  [downloadItems addObject:item];
 	  }
 
@@ -2029,6 +2050,16 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_comment_outlined_20"},
+		  @{@"identifier" : @"DYYYDefaultEnterWorks",
+		    @"title" : @"资料默认进入作品",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_playsquarestack_outlined_20"},
+		  @{@"identifier" : @"DYYYEnableNoiseFilter",
+		    @"title" : @"视频降噪人声增强",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_usercheckmark_outlined"},
 		  @{@"identifier" : @"DYYYEnableDoubleOpenAlertController",
 		    @"title" : @"启用双击打开菜单",
 		    @"detail" : @"",
@@ -2058,11 +2089,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			    [doubleTapItems addObject:enableDoubleTapMenu];
 
 			    NSArray *doubleTapFunctions = @[
-				    @{@"identifier" : @"DYYYisEnableSheetBlur",
-				      @"title" : @"菜单玻璃效果",
-				      @"detail" : @"",
-				      @"cellType" : @6,
-				      @"imageName" : @"ic_list_outlined"},
 				    @{@"identifier" : @"DYYYDoubleTapDownload",
 				      @"title" : @"保存视频/图片",
 				      @"detail" : @"",
@@ -2850,43 +2876,46 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 
 %hook AWESettingsViewModel
 - (NSArray *)sectionDataArray {
-	NSArray *originalSections = %orig;
-	BOOL sectionExists = NO;
-	for (AWESettingSectionModel *section in originalSections) {
-		if ([section.sectionHeaderTitle isEqualToString:DYYY_NAME]) {
-			sectionExists = YES;
-			break;
-		}
-	}
+    NSArray *originalSections = %orig;
+    BOOL sectionExists = NO;
+    BOOL isMainSettingsPage = NO;
+    
+    // 遍历检查是否已存在DYYY部分
+    for (AWESettingSectionModel *section in originalSections) {
+        if ([section.sectionHeaderTitle isEqualToString:DYYY_NAME]) {
+            sectionExists = YES;
+        }
+        if ([section.sectionHeaderTitle isEqualToString:@"账号"]) {
+            isMainSettingsPage = YES;
+        }
+    }
 
-	BOOL isMainSettingsPage = originalSections.count >= 1 && [[originalSections[0] sectionHeaderTitle] isEqualToString:@"账号"];
+    if (isMainSettingsPage && !sectionExists) {
+        AWESettingItemModel *dyyyItem = [[%c(AWESettingItemModel) alloc] init];
+        dyyyItem.identifier = DYYY_NAME;
+        dyyyItem.title = DYYY_NAME;
+        dyyyItem.detail = DYYY_VERSION;
+        dyyyItem.type = 0;
+        dyyyItem.svgIconImageName = @"ic_sapling_outlined";
+        dyyyItem.cellType = 26;
+        dyyyItem.colorStyle = 2;
+        dyyyItem.isEnable = YES;
+        dyyyItem.cellTappedBlock = ^{
+          UIViewController *rootVC = self.controllerDelegate;
+          BOOL hasAgreed = [DYYYSettingsHelper getUserDefaults:@"DYYYUserAgreementAccepted"];
+          showDYYYSettingsVC(rootVC, hasAgreed);
+        };
 
-	if (isMainSettingsPage && !sectionExists) {
-		AWESettingItemModel *dyyyItem = [[%c(AWESettingItemModel) alloc] init];
-		dyyyItem.identifier = DYYY_NAME;
-		dyyyItem.title = DYYY_NAME;
-		dyyyItem.detail = DYYY_VERSION;
-		dyyyItem.type = 0;
-		dyyyItem.svgIconImageName = @"ic_sapling_outlined";
-		dyyyItem.cellType = 26;
-		dyyyItem.colorStyle = 2;
-		dyyyItem.isEnable = YES;
-		dyyyItem.cellTappedBlock = ^{
-		  UIViewController *rootVC = self.controllerDelegate;
-		  BOOL hasAgreed = [DYYYSettingsHelper getUserDefaults:@"DYYYUserAgreementAccepted"];
-		  showDYYYSettingsVC(rootVC, hasAgreed);
-		};
+        AWESettingSectionModel *newSection = [[%c(AWESettingSectionModel) alloc] init];
+        newSection.itemArray = @[ dyyyItem ];
+        newSection.type = 0;
+        newSection.sectionHeaderHeight = 40;
+        newSection.sectionHeaderTitle = @"DYYY";
 
-		AWESettingSectionModel *newSection = [[%c(AWESettingSectionModel) alloc] init];
-		newSection.itemArray = @[ dyyyItem ];
-		newSection.type = 0;
-		newSection.sectionHeaderHeight = 40;
-		newSection.sectionHeaderTitle = @"DYYY";
-
-		NSMutableArray *newSections = [NSMutableArray arrayWithArray:originalSections];
-		[newSections insertObject:newSection atIndex:0];
-		return newSections;
-	}
-	return originalSections;
+        NSMutableArray *newSections = [NSMutableArray arrayWithArray:originalSections];
+        [newSections insertObject:newSection atIndex:0];
+        return newSections;
+    }
+    return originalSections;
 }
 %end

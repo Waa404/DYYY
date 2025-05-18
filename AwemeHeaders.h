@@ -979,3 +979,31 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (NSArray *)getQualities;
 - (void)setResolutionWithIndex:(NSInteger)index isManual:(BOOL)manual beginChange:(void (^)(void))beginChangeBlock completion:(void (^)(void))completionBlock;
 @end
+
+@interface AWEUserDetailViewControllerV2 : UIViewController
+- (void)setProfileShowTab:(NSInteger)tab;
+@end
+
+// 视频播放控制处理器
+@interface AWEPlayerPlayControlHandler : NSObject
+@property (nonatomic, strong) AVAudioUnitEQ *audioEQ;
+@property (nonatomic, strong) AVAudioUnitReverb *reverb;
+@property (nonatomic, assign) BOOL noiseFilterEnabled;
+- (void)setupNoiseFilter;
+- (void)addNoiseFilterButton;
+- (void)toggleNoiseFilter;
+- (void)setupAVPlayerItem:(AVPlayerItem *)item;
+- (id)player;
+@end
+
+// 视频控制视图
+@interface AWEFeedVideoControlView : UIView
+- (void)handleVideoQualityLongPress:(UILongPressGestureRecognizer *)gesture;
+@end
+
+@interface AWEMixVideoPanelMoreView : UIView
+@end
+
+@interface AWESearchViewController : UIViewController
+@property (nonatomic, strong) UITabBarController *tabBarController;
+@end

@@ -24,7 +24,7 @@
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideComment"] && ![[NSUserDefaults standardUserDefaults] boolForKey:@"WaaHideChatCommentBg"]) {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideComment"]) {
 		[self removeFromSuperview];
 		return;
 	}
