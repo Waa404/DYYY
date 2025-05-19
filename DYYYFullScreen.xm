@@ -517,9 +517,21 @@ static CGFloat currentScale = 1.0;
 - (void)setHidden:(BOOL)hidden {
 	%orig(hidden);
 
+	Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
+	for (UIView *subview in self.subviews) {
+		if ([subview isKindOfClass:generalButtonClass]) {
+			AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
+			if ([button.accessibilityLabel isEqualToString:@"首页"] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"] && button.status == 2) {
+				button.userInteractionEnabled = NO;
+			} else if ([button.accessibilityLabel isEqualToString:@"首页"] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"] && button.status == 1) {
+				button.userInteractionEnabled = YES;
+			}
+		}
+	}
+
 	BOOL hideBottomBg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomBg"];
 
-	// 如果开启了隐藏底部背景，则直接隐藏背景视图，不进行其他判断
+	// 如果开启了隐藏底部背景，则直接隐藏背景视图
 	if (hideBottomBg) {
 		UIView *backgroundView = nil;
 		for (UIView *subview in self.subviews) {
@@ -539,20 +551,6 @@ static CGFloat currentScale = 1.0;
 			}
 		}
 	} else {
-		Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
-
-		for (UIView *subview in self.subviews) {
-			if ([subview isKindOfClass:generalButtonClass]) {
-				AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
-				if ([button.accessibilityLabel isEqualToString:@"首页"] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"] && button.status == 2) {
-					button.userInteractionEnabled = NO;
-
-				} else if ([button.accessibilityLabel isEqualToString:@"首页"] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"] && button.status == 1) {
-					button.userInteractionEnabled = YES;
-				}
-			}
-		}
-
 		// 仅对全屏模式处理背景显示逻辑
 		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
 			UIView *backgroundView = nil;
@@ -647,23 +645,27 @@ static CGFloat currentScale = 1.0;
 %hook CommentInputContainerView
 
 - (void)layoutSubviews {
-	%orig;
-	UIViewController *parentVC = nil;
-	if ([self respondsToSelector:@selector(viewController)]) {
-		id viewController = [self performSelector:@selector(viewController)];
-		if ([viewController respondsToSelector:@selector(parentViewController)]) {
-			parentVC = [viewController parentViewController];
-		}
-	}
+    %orig;
+    UIViewController *parentVC = nil;
+    if ([self respondsToSelector:@selector(viewController)]) {
+        id viewController = [self performSelector:@selector(viewController)];
+        if ([viewController respondsToSelector:@selector(parentViewController)]) {
+            parentVC = [viewController parentViewController];
+        }
+    }
 
-	if (parentVC && ([parentVC isKindOfClass:%c(AWEAwemeDetailTableViewController)] || [parentVC isKindOfClass:%c(AWEAwemeDetailCellViewController)])) {
-		for (UIView *subview in [self subviews]) {
-			if ([subview class] == [UIView class]) {
-				subview.hidden = YES;
-				break;
-			}
-		}
-	}
+    if (parentVC && ([parentVC isKindOfClass:%c(AWEAwemeDetailTableViewController)] || [parentVC isKindOfClass:%c(AWEAwemeDetailCellViewController)])) {
+        for (UIView *subview in [self subviews]) {
+            if ([subview class] == [UIView class]) {
+                if ([(UIView *)self frame].size.height == 83) {
+                    subview.hidden = YES;
+                } else {
+                    subview.hidden = NO;
+                }
+                break;
+            }
+        }
+    }
 }
 
 %end

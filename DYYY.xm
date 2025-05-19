@@ -1674,13 +1674,13 @@ static CGFloat rightLabelRightMargin = -1;
 %end
 
 // 禁用个人资料自动进入橱窗
-%hook AWEUserDetailViewControllerV2
+%hook AWEUserTabListModel
 
-- (void)viewWillLayoutSubviews {
-	%orig;
-
+- (NSInteger)profileLandingTab {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDefaultEnterWorks"]) {
-		[self setProfileShowTab:0];
+		return 0;
+	} else {
+		return %orig;
 	}
 }
 
@@ -1883,14 +1883,24 @@ static CGFloat rightLabelRightMargin = -1;
 
 %end
 
-
 %group AutoPlay
+
+%hook DUXToast
+
++ (void)showText:(NSString *)text {
+    if (text && [text isEqualToString:@"已取消自动翻页"]) {
+        return;
+    }
+    %orig;
+}
+
+%end
 
 %hook UIViewController
 
 - (void)viewDidAppear:(BOOL)animated {
 	%orig;
-	if ([self isKindOfClass:%c(AWESearchViewController)]) {
+	if ([self isKindOfClass:%c(AWESearchViewController)] || [self isKindOfClass:%c(IESLiveInnerFeedViewController)] || [self isKindOfClass:%c(AWEAwemeDetailTableViewController)]) {
 		UITabBarController *tabBarController = self.tabBarController;
 		if ([tabBarController isKindOfClass:%c(AWENormalModeTabBarController)]) {
 			tabBarController.tabBar.hidden = YES;
@@ -1898,14 +1908,37 @@ static CGFloat rightLabelRightMargin = -1;
 	}
 }
 
-- (void)viewDidDisappear:(BOOL)animated {
-	%orig;
-	if ([self isKindOfClass:%c(AWESearchViewController)]) {
-		UITabBarController *tabBarController = self.tabBarController;
-		if ([tabBarController isKindOfClass:%c(AWENormalModeTabBarController)]) {
-			tabBarController.tabBar.hidden = NO;
-		}
-	}
+%end
+
+%hook AWENormalModeTabBarController
+
+- (void)viewDidLoad {
+    %orig;
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self 
+                                             selector:@selector(handleApplicationWillEnterForeground:) 
+                                                 name:UIApplicationWillEnterForegroundNotification 
+                                               object:nil];
+}
+
+%new
+- (void)handleApplicationWillEnterForeground:(NSNotification *)notification {
+    UIViewController *topVC = topVC;
+    if ([topVC isKindOfClass:%c(UINavigationController)]) {
+        UINavigationController *navVC = (UINavigationController *)topVC;
+        topVC = navVC.topViewController;
+    }
+    
+    if ([topVC isKindOfClass:%c(AWESearchViewController)] || 
+        [topVC isKindOfClass:%c(IESLiveInnerFeedViewController)] || 
+        [topVC isKindOfClass:%c(AWEAwemeDetailTableViewController)]) {
+        self.awe_tabBar.hidden = YES;
+    }
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    %orig;
 }
 
 %end
