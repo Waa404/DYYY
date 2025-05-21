@@ -215,6 +215,10 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 			frame.size.height = self.view.superview.frame.size.height;
 		} else if ([currentReferString isEqualToString:@"chat"] || currentReferString == nil) {
 			frame.size.height = self.view.superview.frame.size.height;
+		} else if ([currentReferString isEqualToString:@"search_result"] || currentReferString == nil) {
+			frame.size.height = self.view.superview.frame.size.height;
+		} else if ([currentReferString isEqualToString:@"close_friends_moment"] || currentReferString == nil) {
+			frame.size.height = self.view.superview.frame.size.height;
 		} else if ([currentReferString isEqualToString:@"others_homepage"] || currentReferString == nil) {
 			frame.size.height = self.view.superview.frame.size.height - 83;
 		} else {

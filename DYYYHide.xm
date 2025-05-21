@@ -1,13 +1,12 @@
 #import "AwemeHeaders.h"
 
-%hook UIView
-- (void)layoutSubviews {
-	%orig;
+%hook AWEFeedTabJumpGuideView
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDiscover"] && [self.accessibilityLabel isEqualToString:@"搜索"]) {
-		[self removeFromSuperview];
-	}
+- (void)layoutSubviews {
+    %orig;
+    [self removeFromSuperview];
 }
+
 %end
 
 %hook AWEFeedLiveMarkView
@@ -662,7 +661,10 @@
 	
 	if ([accessibilityLabel isEqualToString:@"返回"]) {
 		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideBack"]) {
-			[self removeFromSuperview];
+			UIView *parent = self.superview;
+			if ([parent isKindOfClass:%c(AWEBaseElementView)]) {
+				[self removeFromSuperview];
+			}
 			return;
 		}
 	}
@@ -888,7 +890,22 @@
 		return YES;
 	} else {
 		if (class_getInstanceMethod([self class], @selector(prefersStatusBarHidden)) !=
-		    class_getInstanceMethod([%c(IESLiveAudienceViewController) class], @selector(prefersStatusBarHidden))) {
+		    class_getInstanceMethod([%c(AWEAwemeDetailTableViewController) class], @selector(prefersStatusBarHidden))) {
+			return %orig;
+		}
+		return NO;
+	}
+}
+%end
+
+// 图文状态栏
+%hook AWEFullPageFeedNewContainerViewController
+- (BOOL)prefersStatusBarHidden {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHideStatusbar"]) {
+		return YES;
+	} else {
+		if (class_getInstanceMethod([self class], @selector(prefersStatusBarHidden)) !=
+		    class_getInstanceMethod([%c(AWEFullPageFeedNewContainerViewController) class], @selector(prefersStatusBarHidden))) {
 			return %orig;
 		}
 		return NO;
@@ -1653,6 +1670,19 @@
 
 %end
 
+// 隐藏上次看到
+%hook DUXPopover
+
+- (void)layoutSubviews {
+	%orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePopover"]) {
+		[self removeFromSuperview];
+	}
+}
+
+%end
+
 // 隐藏双栏入口
 %hook AWENormalModeTabBarFeedView
 - (void)layoutSubviews {
@@ -1676,6 +1706,26 @@
 
 - (id)init {
 	return nil;
+}
+%end
+
+%hook UIImageView
+- (void)layoutSubviews {
+    %orig;
+    
+    if (!self.accessibilityLabel) {
+        UIView *parentView = self.superview;
+        
+        if (parentView && [parentView class] == [UIView class] && 
+            [parentView.accessibilityLabel isEqualToString:@"搜索"]) {
+            self.hidden = YES;
+        }
+
+        else if (parentView && [NSStringFromClass([parentView class]) isEqualToString:@"AWESearchEntryHalfScreenElement"] &&
+                 [parentView.accessibilityLabel isEqualToString:@"搜索"]) {
+            self.hidden = YES;
+        }
+    }
 }
 %end
 
