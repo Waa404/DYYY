@@ -586,6 +586,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"",
 		    @"cellType" : @26,
 		    @"imageName" : @"ic_speed_outlined_20"},
+		  @{@"identifier" : @"DYYYLongPressSpeed",
+		    @"title" : @"设置长按倍速",
+		    @"detail" : @"",
+		    @"cellType" : @26,
+		    @"imageName" : @"ic_speed_outlined_20"},
 		  @{@"identifier" : @"DYYYisEnableArea",
 		    @"title" : @"时间属地显示",
 		    @"detail" : @"",
@@ -631,6 +636,26 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			  };
 		  }
 
+		  else if ([item.identifier isEqualToString:@"DYYYLongPressSpeed"]) {
+			  // 获取已保存的默认倍速值
+			  NSString *savedSpeed = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLongPressSpeed"];
+			  item.detail = savedSpeed ?: @"2.0x";
+
+			  item.cellTappedBlock = ^{
+			    NSArray *speedOptions = @[ @"0.75x", @"1.0x", @"1.25x", @"1.5x", @"2.0x", @"2.5x", @"3.0x" ];
+
+			    // 显示选项选择视图并直接获取返回值
+			    NSString *selectedValue = [DYYYOptionsSelectionView showWithPreferenceKey:@"DYYYLongPressSpeed"
+											 optionsArray:speedOptions
+											   headerText:@"选择右侧长按倍速"
+										       onPresentingVC:topView()];
+
+			    // 设置详情文本为选中的值
+			    item.detail = selectedValue;
+			    [DYYYSettingsHelper refreshTableView];
+			  };
+		  }
+
 		  else if ([item.identifier isEqualToString:@"DYYYScheduleStyle"]) {
 			  NSString *savedStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
 			  item.detail = savedStyle ?: @"默认";
@@ -654,7 +679,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  }
 	  // 【杂项设置】分类
 	  NSMutableArray<AWESettingItemModel *> *miscellaneousItems = [NSMutableArray array];
-	  NSArray *miscellaneousSettings = @[
+	  NSArray *miscellaneousSettings = @[	
 		  @{@"identifier" : @"DYYYisHideStatusbar",
 		    @"title" : @"隐藏系统顶栏",
 		    @"detail" : @"",
@@ -1074,6 +1099,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideHotSearch",
+		    @"title" : @"隐藏底栏热榜",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideTopBarBadge",
 		    @"title" : @"隐藏顶栏红点",
 		    @"detail" : @"",
@@ -1153,6 +1183,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"title" : @"隐藏全屏观看",
 		    @"detail" : @"",
 		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideGradient",
+		    @"title" : @"隐藏展开渐变",
+		    @"detail" : @"",
+		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"}
 	  ];
 
@@ -1164,6 +1199,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  // 【侧边栏】分类
 	  NSMutableArray<AWESettingItemModel *> *sidebarItems = [NSMutableArray array];
 	  NSArray *sidebarSettings = @[
+                  @{@"identifier" : @"DYYYStreamlinethesidebar",
+		    @"title" : @"隐藏侧栏元素",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYisHiddenSidebarDot",
 		    @"title" : @"隐藏侧栏红点",
 		    @"detail" : @"",
@@ -1176,6 +1216,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideBack",
 		    @"title" : @"隐藏返回按钮",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideSettingsAbout",
+		    @"title" : @"隐藏设置关于",
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
@@ -1963,6 +2008,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_emoji_outlined"},
+		  @{@"identifier" : @"DYYYForceDownloadIMEmotion",
+		    @"title" : @"保存聊天页表情包",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_emoji_outlined"},
 		  @{@"identifier" : @"DYYYHapticFeedbackEnabled",
 		    @"title" : @"下载完成震动反馈",
 		    @"detail" : @"",
@@ -2262,11 +2312,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_playsquarestack_outlined_20"},
-		  @{@"identifier" : @"DYYYEnableNoiseFilter",
-		    @"title" : @"视频降噪人声增强",
-		    @"detail" : @"",
-		    @"cellType" : @6,
-		    @"imageName" : @"ic_usercheckmark_outlined"},
 		  @{@"identifier" : @"DYYYEnableDoubleOpenAlertController",
 		    @"title" : @"启用双击打开菜单",
 		    @"detail" : @"",
