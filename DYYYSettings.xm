@@ -679,7 +679,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  }
 	  // 【杂项设置】分类
 	  NSMutableArray<AWESettingItemModel *> *miscellaneousItems = [NSMutableArray array];
-	  NSArray *miscellaneousSettings = @[	
+	  NSArray *miscellaneousSettings = @[
 		  @{@"identifier" : @"DYYYisHideStatusbar",
 		    @"title" : @"隐藏系统顶栏",
 		    @"detail" : @"",
@@ -1199,7 +1199,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  // 【侧边栏】分类
 	  NSMutableArray<AWESettingItemModel *> *sidebarItems = [NSMutableArray array];
 	  NSArray *sidebarSettings = @[
-                  @{@"identifier" : @"DYYYStreamlinethesidebar",
+		  @{@"identifier" : @"DYYYStreamlinethesidebar",
 		    @"title" : @"隐藏侧栏元素",
 		    @"detail" : @"",
 		    @"cellType" : @6,
@@ -1305,6 +1305,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideDiscover",
 		    @"title" : @"隐藏右上搜索",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideCommentDiscover",
+		    @"title" : @"隐藏评论搜索",
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
@@ -1440,6 +1445,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideCommentViews",
 		    @"title" : @"隐藏评论视图",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideCommentTips",
+		    @"title" : @"隐藏评论提示",
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
@@ -2262,8 +2272,23 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_gearsimplify_outlined_20"},
+		  @{@"identifier" : @"DYYYVideoGesture",
+		    @"title" : @"横屏视频交互增强",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_playsquarestack_outlined_20"},
+		  @{@"identifier" : @"DYYYDisableAutoEnterLive",
+		    @"title" : @"禁用自动进入直播",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_video_outlined_20"},
 		  @{@"identifier" : @"DYYYCommentCopyText",
 		    @"title" : @"长按评论复制文案",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_at_outlined_20"},
+		  @{@"identifier" : @"DYYYMusicCopyText",
+		    @"title" : @"评论音乐点击复制",
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_at_outlined_20"},
@@ -2633,6 +2658,14 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"}];
 	  [clearButtonItems addObject:hideSliderButton];
+	  AWESettingItemModel *hideChapterButton = [DYYYSettingsHelper
+	      createSettingItem:
+		  @{@"identifier" : @"DYYYHideChapter",
+		    @"title" : @"清屏隐藏章节",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"}];
+	  [clearButtonItems addObject:hideChapterButton];
 	  AWESettingItemModel *hideTabButton = [DYYYSettingsHelper
 	      createSettingItem:
 		  @{@"identifier" : @"DYYYHideTabBar",
