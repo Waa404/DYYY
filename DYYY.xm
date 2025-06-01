@@ -4811,15 +4811,16 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
         }
     }
 
+	 // 增加调整评论区透明度后的兼容
+	 if (isPlayVC && [[[NSUserDefaults standardUserDefaults] objectForKey:@"WaaCommentTransparency"] length] > 0 && [[[NSUserDefaults standardUserDefaults] objectForKey:@"WaaCommentTransparency"] doubleValue] < 1.0 && frame.origin.x != 0) {
+        return;	
+	 }
+
     if (isPlayVC && enableFS) {
         if (frame.origin.x != 0 && frame.origin.y != 0) {
             %orig(frame);
             return;
         }
-		if ([[[NSUserDefaults standardUserDefaults] objectForKey:@"WaaCommentTransparency"] length] > 0 && [[[NSUserDefaults standardUserDefaults] objectForKey:@"WaaCommentTransparency"] doubleValue] < 1.0 && frame.origin.x != 0) {
-			// 增加调整评论区透明度后的兼容
-			return;	
-		}
         CGRect superF = self.superview.frame;
         if (CGRectGetHeight(superF) > 0 &&
             CGRectGetHeight(frame) > 0 &&
@@ -5325,14 +5326,27 @@ static CGFloat currentScale = 1.0;
 
 %hook AWEMixVideoPanelMoreView
 
-- (void)setFrame:(CGRect)frame {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		frame.origin.y -= g_heightDifference;
-	}
-	%orig(frame);
+- (void)didMoveToSuperview {
+    %orig;
+
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) return;
+
+    UIView *view = (UIView *)self;
+    while (view.superview) {
+        view = view.superview;
+        UIColor *bgColor = view.backgroundColor;
+
+        if (bgColor && bgColor != [UIColor clearColor] &&
+            CGColorGetAlpha(bgColor.CGColor) > 0.01) {
+            view.backgroundColor = [UIColor clearColor];
+            view.layer.backgroundColor = [UIColor clearColor].CGColor;
+            break;
+        }
+    }
 }
 
 %end
+
 
 %hook CommentInputContainerView
 
