@@ -57,7 +57,7 @@
               @"DYYYisShowScheduleDisplay" : @[ @"DYYYScheduleStyle", @"DYYYProgressLabelColor", @"DYYYTimelineVerticalPosition" ],
               @"DYYYEnableNotificationTransparency" : @[ @"DYYYNotificationCornerRadius" ],
               @"DYYYEnableFloatSpeedButton" : @[ @"DYYYAutoRestoreSpeed", @"DYYYSpeedButtonShowX", @"DYYYSpeedButtonSize", @"DYYYSpeedSettings" ],
-              @"DYYYEnableFloatClearButton" : @[ @"DYYYClearButtonIcon", @"DYYYEnableFloatClearButtonSize", @"DYYYEnabshijianjindu", @"DYYYHideTimeProgress", @"DYYYHideDanmaku", @"DYYYHideSlider", @"DYYYHideTabBar", @"DYYYHideSpeed" ],
+              @"DYYYEnableFloatClearButton" : @[ @"DYYYClearButtonIcon", @"DYYYEnableFloatClearButtonSize", @"DYYYEnabshijianjindu", @"DYYYHideTimeProgress", @"DYYYHideDanmaku", @"DYYYHideSlider", @"DYYYHideTabBar", @"DYYYHideSpeed", @"DYYYHideChapter" ],
               @"WaaEnableCommentColor" : @[ @"WaaCommentColor" ],
 			  @"DYYYisEnableFullScreen" : @[ @"WaaHidePurityRrogress" ],
           },
@@ -73,8 +73,6 @@
           @"conflicts" : @{
               @"DYYYEnableDoubleOpenComment" : @[ @"DYYYEnableDoubleOpenAlertController" ],
               @"DYYYEnableDoubleOpenAlertController" : @[ @"DYYYEnableDoubleOpenComment" ],
-              @"DYYYABTestBlockEnabled" : @[ @"DYYYABTestPatchEnabled" ],
-              @"DYYYABTestPatchEnabled" : @[ @"DYYYABTestBlockEnabled" ],
               @"DYYYEnabshijianjindu" : @[ @"DYYYHideTimeProgress" ],
               @"DYYYHideTimeProgress" : @[ @"DYYYEnabshijianjindu" ],
               @"DYYYHideLOTAnimationView" : @[ @"DYYYHideFollowPromptView" ],
@@ -88,8 +86,6 @@
           @"mutualExclusive" : @{
               @"DYYYEnableDoubleOpenComment" : @[ @"DYYYEnableDoubleOpenAlertController" ],
               @"DYYYEnableDoubleOpenAlertController" : @[ @"DYYYEnableDoubleOpenComment" ],
-              @"DYYYABTestBlockEnabled" : @[ @"DYYYABTestPatchEnabled" ],
-              @"DYYYABTestPatchEnabled" : @[ @"DYYYABTestBlockEnabled" ],
               @"DYYYEnabshijianjindu" : @[ @"DYYYHideTimeProgress" ],
               @"DYYYHideTimeProgress" : @[ @"DYYYEnabshijianjindu" ],
               @"DYYYHideLOTAnimationView" : @[ @"DYYYHideFollowPromptView" ],
@@ -323,33 +319,54 @@
 }
 
 + (void)refreshTableView {
-    UIViewController *topVC = topView();
-    AWESettingBaseViewController *settingsVC = nil;
-    UITableView *tableView = nil;
-
-    UIView *firstLevelView = [topVC.view.subviews firstObject];
-    UIView *secondLevelView = [firstLevelView.subviews firstObject];
-    UIView *thirdLevelView = [secondLevelView.subviews firstObject];
-
-    UIResponder *responder = thirdLevelView;
-    while (responder) {
-        if ([responder isKindOfClass:NSClassFromString(@"AWESettingBaseViewController")]) {
-            settingsVC = (AWESettingBaseViewController *)responder;
+    if (![NSThread isMainThread]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self refreshTableView];
+        });
+        return;
+    }
+    
+    UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+    NSMutableArray *settingsVCs = [NSMutableArray array];
+    
+    [self findSettingsViewControllers:keyWindow.rootViewController array:settingsVCs];
+    
+    AWESettingBaseViewController *visibleSettingsVC = nil;
+    for (AWESettingBaseViewController *vc in settingsVCs) {
+        if ([vc isViewLoaded] && vc.view.window != nil) {
+            visibleSettingsVC = vc;
             break;
         }
-        responder = [responder nextResponder];
     }
-
-    if (settingsVC) {
-        for (UIView *subview in settingsVC.view.subviews) {
+    
+    if (visibleSettingsVC) {
+        for (UIView *subview in visibleSettingsVC.view.subviews) {
             if ([subview isKindOfClass:[UITableView class]]) {
-                tableView = (UITableView *)subview;
+                UITableView *tableView = (UITableView *)subview;
+                [tableView reloadData];
                 break;
             }
         }
+    }
+}
 
-        if (tableView) {
-            [tableView reloadData];
++ (void)findSettingsViewControllers:(UIViewController *)viewController array:(NSMutableArray *)array {
+    if ([viewController isKindOfClass:NSClassFromString(@"AWESettingBaseViewController")]) {
+        [array addObject:viewController];
+    }
+    
+    for (UIViewController *childVC in viewController.childViewControllers) {
+        [self findSettingsViewControllers:childVC array:array];
+    }
+    
+    if (viewController.presentedViewController) {
+        [self findSettingsViewControllers:viewController.presentedViewController array:array];
+    }
+    
+    if ([viewController isKindOfClass:[UINavigationController class]]) {
+        UINavigationController *navController = (UINavigationController *)viewController;
+        for (UIViewController *vc in navController.viewControllers) {
+            [self findSettingsViewControllers:vc array:array];
         }
     }
 }
