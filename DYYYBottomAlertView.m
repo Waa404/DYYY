@@ -13,6 +13,8 @@
     
     AFDPrivacyHalfScreenViewController *vc = [NSClassFromString(@"AFDPrivacyHalfScreenViewController") new];
     
+    if (!vc) return nil;
+
     if (!cancelButtonText) {
         cancelButtonText = @"取消";
     }
@@ -21,16 +23,28 @@
         confirmButtonText = @"确定";
     }
     
+    __weak typeof(vc) weakVC = vc;
+
     DYYYAlertActionHandler wrappedCancelAction = ^{
-        if (cancelAction) {
-            cancelAction();
-        }
+        if (cancelAction) cancelAction();
+        if (weakVC) [self dismissAlertViewController:weakVC];
+    };
+    
+    vc.closeButtonClickedBlock = ^{
+        if (cancelAction) cancelAction();
+    };
+
+    vc.slideDismissBlock = ^{
+        if (cancelAction) cancelAction();
+    };
+    
+    vc.tapDismissBlock = ^{
+        if (cancelAction) cancelAction();
     };
     
     DYYYAlertActionHandler wrappedConfirmAction = ^{
-        if (confirmAction) {
-            confirmAction();
-        }
+        if (confirmAction) confirmAction();
+        if (weakVC) [self dismissAlertViewController:weakVC];
     };
     
     [vc configWithImageView:nil 
@@ -46,20 +60,17 @@
     [vc setUseCardUIStyle:YES];
 
     UIViewController *topVC = topView(); 
-    if (topVC) {
-        if ([vc respondsToSelector:@selector(presentOnViewController:)]) {
+    if (topVC
+        && [vc respondsToSelector:@selector(presentOnViewController:)]
+	    && !topVC.presentedViewController
+	    && ![topVC isBeingPresented]
+	    && ![topVC isBeingDismissed]) {
             [vc presentOnViewController:topVC];
-        }
+    } else {
+        return nil; 
     }
     return vc;
 }
-
-
-typedef NS_ENUM(NSInteger, DYYYAlertDismissType) {
-    DYYYAlertDismissTypeDefault,
-    DYYYAlertDismissTypeSlide,
-    DYYYAlertDismissTypeTap
-};
 
 + (UIViewController *)showAlertWithTitle:(NSString *)title
                                  message:(NSString *)message
@@ -97,6 +108,8 @@ typedef NS_ENUM(NSInteger, DYYYAlertDismissType) {
     
     AFDPrivacyHalfScreenViewController *vc = [NSClassFromString(@"AFDPrivacyHalfScreenViewController") new];
     
+    if (!vc) return nil;
+
     if (!cancelButtonText) {
         cancelButtonText = @"取消";
     }
@@ -133,16 +146,28 @@ typedef NS_ENUM(NSInteger, DYYYAlertDismissType) {
         });
     }
     
+    __weak typeof(vc) weakVC = vc;
+
     DYYYAlertActionHandler wrappedCancelAction = ^{
-        if (cancelAction) {
-            cancelAction();
-        }
+        if (cancelAction) cancelAction();
+        if (weakVC) [self dismissAlertViewController:weakVC];
+    };
+    
+    vc.closeButtonClickedBlock = ^{
+        if (cancelAction) cancelAction();
+    };
+
+    vc.slideDismissBlock = ^{
+        if (cancelAction) cancelAction();
+    };
+    
+    vc.tapDismissBlock = ^{
+        if (cancelAction) cancelAction();
     };
     
     DYYYAlertActionHandler wrappedConfirmAction = ^{
-        if (confirmAction) {
-            confirmAction();
-        }
+        if (confirmAction) confirmAction();
+        if (weakVC) [self dismissAlertViewController:weakVC];
     };
     
     [vc configWithImageView:imageView
@@ -159,13 +184,29 @@ typedef NS_ENUM(NSInteger, DYYYAlertDismissType) {
     [vc setOnlyTopCornerClips:YES];
     
     UIViewController *topVC = topView();
-    if (topVC) {
-        if ([vc respondsToSelector:@selector(presentOnViewController:)]) {
+    if (topVC
+        && [vc respondsToSelector:@selector(presentOnViewController:)]
+	    && !topVC.presentedViewController
+	    && ![topVC isBeingPresented]
+	    && ![topVC isBeingDismissed]) {
             [vc presentOnViewController:topVC];
-        }
+    } else {
+        return nil; 
     }
     
     return vc;
 }
 
++ (void)dismissAlertViewController:(UIViewController *)viewController {
+    if (!viewController || !viewController.presentingViewController) {
+        return;
+    }
+    if ([NSThread isMainThread]) {
+        [viewController dismissViewControllerAnimated:YES completion:nil];
+    } else {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [viewController dismissViewControllerAnimated:YES completion:nil];
+        });
+    }
+}
 @end
