@@ -94,6 +94,9 @@ static CGFloat gStartVal = 0.0;
 @property(copy, nonatomic) AWEURLModel *avatarMedium;
 @end
 
+@interface AWEAnimatedImageVideoInfo : NSObject
+@end
+
 @interface AWEAwemeModel : NSObject
 @property(nonatomic, strong, readwrite) NSNumber *createTime;
 @property(nonatomic, assign, readwrite) CGFloat videoDuration;
@@ -117,7 +120,7 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, copy) NSString *descriptionSimpleString;
 @property(nonatomic, strong) NSString *itemID;
 @property(nonatomic, strong) AWEUserModel *author;
-
+@property(nonatomic, strong) AWEAnimatedImageVideoInfo *animatedImageVideoInfo;
 @property(nonatomic, strong) AWEAwemeStatisticsModel *statistics;
 - (BOOL)isLive;
 - (AWESearchAwemeExtraModel *)searchExtraModel;
@@ -339,10 +342,6 @@ static CGFloat gStartVal = 0.0;
 @interface AWEBaseListViewController : UIViewController
 - (void)applyBlurEffectIfNeeded;
 - (UILabel *)findCommentLabel:(UIView *)view;
-@end
-
-// 隐藏视频定位
-@interface AWEFeedTemplateAnchorView : UIView
 @end
 
 // 隐藏同城定位
@@ -940,14 +939,6 @@ static CGFloat gStartVal = 0.0;
              singleTapBlock:(void (^)(void))singleTapBlock;
 - (void)configWithImageView:(UIImageView *)imageView
                   lockImage:(UIImage *)lockImage
-             titleLabelText:(NSString *)titleText
-           contentLabelText:(NSString *)contentText
-            knownButtonText:(NSString *)knownButtonText
-            toggleTitleText:(NSString *)toggleTitleText
-               defaultState:(BOOL)defaultState
-           defaultLockState:(BOOL)defaultLockState;
-- (void)configWithImageView:(UIImageView *)imageView
-                  lockImage:(UIImage *)lockImage
              lockImageInset:(UIEdgeInsets)lockImageInset
              titleLabelText:(NSString *)titleLabelText
            contentLabelText:(NSString *)contentLabelText
@@ -1205,4 +1196,12 @@ static CGFloat gStartVal = 0.0;
 
 @interface AWEPlayInteractionUserAvatarFollowController : UIViewController
 @property(retain, nonatomic) AWEAwemeModel *model;
+@end
+
+@interface AWECodeGenCommonAnchorBasicInfoModel : UIViewController
+@property(copy, nonatomic) NSString *name;
+@end
+
+@interface AWEFeedTemplateAnchorView : UIView
+@property(retain, nonatomic) AWECodeGenCommonAnchorBasicInfoModel *templateAnchorInfo;
 @end

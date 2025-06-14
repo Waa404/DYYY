@@ -348,6 +348,7 @@
 				       cancelButtonText:@"取消"
 				      confirmButtonText:@"关注"
 					   cancelAction:nil
+					    closeAction:nil
 					  confirmAction:^{
 					    %orig(gesture);
 					  }];
@@ -407,6 +408,7 @@
 				       cancelButtonText:@"取消"
 				      confirmButtonText:@"关注"
 					   cancelAction:nil
+					    closeAction:nil
 					  confirmAction:^{
 					    %orig(gesture);
 					  }];
@@ -914,7 +916,11 @@
 		dispatch_async(dispatch_get_main_queue(), ^{
 		  [DYYYBottomAlertView showAlertWithTitle:@"收藏确认"
 						  message:@"是否确认/取消收藏？"
+					        avatarURL:nil
+				     cancelButtonText:nil
+				    confirmButtonText:nil
 					     cancelAction:nil
+					      closeAction:nil
 					    confirmAction:^{
 					      if (r && [r isKindOfClass:NSClassFromString(@"NSBlock")]) {
 						      ((void (^)(void))r)();
@@ -2806,22 +2812,6 @@ static AWEIMReusableCommonCell *currentCell;
 
 %end
 
-// 隐藏拍同款
-%hook AWEFeedAnchorContainerView
-
-- (BOOL)isHidden {
-	BOOL origHidden = %orig;
-	BOOL hideSamestyle = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFeedAnchorContainer"];
-	return origHidden || hideSamestyle;
-}
-
-- (void)setHidden:(BOOL)hidden {
-	BOOL forceHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFeedAnchorContainer"];
-	%orig(forceHide ? YES : hidden);
-}
-
-%end
-
 // 隐藏合集和声明
 %hook AWEAntiAddictedNoticeBarView
 - (void)layoutSubviews {
@@ -3411,16 +3401,29 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-// 隐藏视频定位
+// 隐藏昵称上方
 %hook AWEFeedTemplateAnchorView
 
 - (void)layoutSubviews {
-	%orig;
-
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLocation"]) {
-		[self removeFromSuperview];
-		return;
-	}
+    %orig;
+    
+    BOOL hideFeedAnchor = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFeedAnchorContainer"];
+    BOOL hideLocation = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLocation"];
+    
+    if (!hideFeedAnchor && !hideLocation) return;
+    
+    AWECodeGenCommonAnchorBasicInfoModel *anchorInfo = [self valueForKey:@"templateAnchorInfo"];
+    if (!anchorInfo || ![anchorInfo respondsToSelector:@selector(name)]) return;
+    
+    NSString *name = [anchorInfo valueForKey:@"name"];
+    BOOL isPoi = [name isEqualToString:@"poi_poi"];
+    
+    if ((hideFeedAnchor && !isPoi) || (hideLocation && isPoi)) {
+        UIView *parentView = self.superview;
+        if (parentView) {
+            parentView.hidden = YES;
+        }
+    }
 }
 
 %end
@@ -4223,30 +4226,12 @@ static AWEIMReusableCommonCell *currentCell;
 		// 过滤包含特定关键词的视频
 		if (keywordsList.count > 0) {
 			// 检查视频标题
-			if (self.itemTitle.length > 0) {
+			if (self.descriptionString.length > 0) {
 				for (NSString *keyword in keywordsList) {
 					NSString *trimmedKeyword = [keyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-					if (trimmedKeyword.length > 0 && [self.itemTitle containsString:trimmedKeyword]) {
+					if (trimmedKeyword.length > 0 && [self.descriptionString containsString:trimmedKeyword]) {
 						shouldFilterKeywords = YES;
 						break;
-					}
-				}
-			}
-
-			// 如果标题中没有关键词，检查标签(textExtras)
-			if (!shouldFilterKeywords && self.textExtras.count > 0) {
-				for (AWEAwemeTextExtraModel *textExtra in self.textExtras) {
-					NSString *hashtagName = textExtra.hashtagName;
-					if (hashtagName.length > 0) {
-						for (NSString *keyword in keywordsList) {
-							NSString *trimmedKeyword = [keyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-							if (trimmedKeyword.length > 0 && [hashtagName containsString:trimmedKeyword]) {
-								shouldFilterKeywords = YES;
-								break;
-							}
-						}
-						if (shouldFilterKeywords)
-							break;
 					}
 				}
 			}
@@ -4436,7 +4421,6 @@ static AWEIMReusableCommonCell *currentCell;
 		return;
 	}
 
-	// 显示弹窗的情况
 	if (isPopupEnabled) {
 		AWEAwemeModel *awemeModel = nil;
 
@@ -4447,6 +4431,8 @@ static AWEIMReusableCommonCell *currentCell;
 
 		// 确定内容类型（视频或图片）
 		BOOL isImageContent = (awemeModel.awemeType == 68);
+		// 判断是否为新版实况照片
+		BOOL isNewLivePhoto = (awemeModel.video && awemeModel.animatedImageVideoInfo != nil);
 		NSString *downloadTitle;
 
 		if (isImageContent) {
@@ -4462,6 +4448,8 @@ static AWEIMReusableCommonCell *currentCell;
 			} else {
 				downloadTitle = (currentImageModel.clipVideo != nil) ? @"保存实况" : @"保存图片";
 			}
+		} else if (isNewLivePhoto) {
+			downloadTitle = @"保存实况";
 		} else {
 			downloadTitle = @"保存视频";
 		}
@@ -4515,6 +4503,29 @@ static AWEIMReusableCommonCell *currentCell;
 						      } else {
 							      [DYYYManager showToast:@"没有找到合适格式的图片"];
 						      }
+					      }
+				      } else if (isNewLivePhoto) {
+					      // 新版实况照片
+					      // 使用封面URL作为图片URL
+					      NSURL *imageURL = nil;
+					      if (videoModel.coverURL && videoModel.coverURL.originURLList.count > 0) {
+						      imageURL = [NSURL URLWithString:videoModel.coverURL.originURLList.firstObject];
+					      }
+
+					      // 视频URL从视频模型获取
+					      NSURL *videoURL = nil;
+					      if (videoModel && videoModel.playURL && videoModel.playURL.originURLList.count > 0) {
+						      videoURL = [NSURL URLWithString:videoModel.playURL.originURLList.firstObject];
+					      } else if (videoModel && videoModel.h264URL && videoModel.h264URL.originURLList.count > 0) {
+						      videoURL = [NSURL URLWithString:videoModel.h264URL.originURLList.firstObject];
+					      }
+
+					      // 下载实况照片
+					      if (imageURL && videoURL) {
+						      [DYYYManager downloadLivePhoto:imageURL
+									    videoURL:videoURL
+									  completion:^{
+									  }];
 					      }
 				      } else {
 					      // 视频内容
@@ -4651,8 +4662,7 @@ static AWEIMReusableCommonCell *currentCell;
 
 		// 添加制作视频功能
 		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleCreateVideo"] || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleCreateVideo"]) {
-			// 仅对图集且包含多张图片的内容显示此选项
-			if (isImageContent && awemeModel.albumImages.count > 1) {
+			if (isImageContent) {
 				AWEUserSheetAction *createVideoAction = [NSClassFromString(@"AWEUserSheetAction")
 				    actionWithTitle:@"制作视频"
 					    imgName:nil
@@ -4746,7 +4756,7 @@ static AWEIMReusableCommonCell *currentCell;
 			AWEUserSheetAction *showSharePanel = [NSClassFromString(@"AWEUserSheetAction") actionWithTitle:@"分享视频"
 													       imgName:nil
 													       handler:^{
-														 [self showSharePanel]; // 执行分享操作
+														 [self showSharePanel];
 													       }];
 			[actions addObject:showSharePanel];
 		}
@@ -4757,7 +4767,7 @@ static AWEIMReusableCommonCell *currentCell;
 			AWEUserSheetAction *likeAction = [NSClassFromString(@"AWEUserSheetAction") actionWithTitle:@"点赞视频"
 													   imgName:nil
 													   handler:^{
-													     [self performLikeAction]; // 执行点赞操作
+													     [self performLikeAction];
 													   }];
 			[actions addObject:likeAction];
 		}
@@ -4768,7 +4778,7 @@ static AWEIMReusableCommonCell *currentCell;
 			AWEUserSheetAction *showDislikeOnVideo = [NSClassFromString(@"AWEUserSheetAction") actionWithTitle:@"长按面板"
 														   imgName:nil
 														   handler:^{
-														     [self showDislikeOnVideo]; // 执行长按面板操作
+														     [self showDislikeOnVideo];
 														   }];
 			[actions addObject:showDislikeOnVideo];
 		}
