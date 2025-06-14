@@ -327,14 +327,16 @@ BOOL isTargetCommentSubview(UIView *view) {
 
             if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    [DYYYBottomAlertView showAlertWithTitle:@"关注确认" 
-                                                   message:@"是否确认关注？" 
-                                               cancelAction:nil 
-                                               confirmAction:^{
-                        dispatch_async(dispatch_get_main_queue(), ^{
-                            %orig(state); 
-                        });
-                    }];
+                    [DYYYBottomAlertView showAlertWithTitle:@"关注确认"
+						message:@"是否确认关注？"
+					      avatarURL:nil
+				       cancelButtonText:@"取消"
+				      confirmButtonText:@"关注"
+					   cancelAction:nil
+					    closeAction:nil
+					  confirmAction:^{
+					    %orig(state);
+					}];
                 });
                 return;
             }
