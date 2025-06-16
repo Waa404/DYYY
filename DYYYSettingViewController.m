@@ -149,6 +149,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
             [DYYYSettingItem itemWithTitle:@"推荐过滤低赞" key:@"DYYYfilterLowLikes" type:DYYYSettingItemTypeTextField placeholder:@"填0关闭"],
             [DYYYSettingItem itemWithTitle:@"推荐过滤文案" key:@"DYYYfilterKeywords" type:DYYYSettingItemTypeTextField placeholder:@"不填关闭"],
             [DYYYSettingItem itemWithTitle:@"推荐过滤用户" key:@"DYYYfilterUsers" type:DYYYSettingItemTypeTextField placeholder:@"不填关闭"],
+            [DYYYSettingItem itemWithTitle:@"推荐过滤HDR" key:@"DYYYfilterFeedHDR" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"推荐视频时限" key:@"DYYYfiltertimelimit" type:DYYYSettingItemTypeTextField placeholder:@"填0关闭，单位为天"],
             [DYYYSettingItem itemWithTitle:@"启用首页净化" key:@"DYYYisEnablePure" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"启用首页全屏" key:@"DYYYisEnableFullScreen" type:DYYYSettingItemTypeSwitch],
@@ -279,7 +280,8 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
             [DYYYSettingItem itemWithTitle:@"隐藏商品信息" key:@"DYYYHideLiveGoodsMsg" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"隐藏点赞动画" key:@"DYYYHideLiveLikeAnimation" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"隐藏输入扫码" key:@"DYYYHideScancode" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏私信回复" key:@"DYYYHideReply" type:DYYYSettingItemTypeSwitch]
+            [DYYYSettingItem itemWithTitle:@"隐藏私信回复" key:@"DYYYHideReply" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"隐藏暂停相关" key:@"DYYYHidePauseVideoRelatedWord" type:DYYYSettingItemTypeSwitch]
         ],
         @[
             [DYYYSettingItem itemWithTitle:@"移除推荐" key:@"DYYYHideHotContainer" type:DYYYSettingItemTypeSwitch],

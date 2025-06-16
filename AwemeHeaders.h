@@ -97,6 +97,11 @@ static CGFloat gStartVal = 0.0;
 @interface AWEAnimatedImageVideoInfo : NSObject
 @end
 
+@interface AWEPropGuideV2Model : NSObject
+@property (nonatomic, copy) NSString *propName;
+@end
+
+
 @interface AWEAwemeModel : NSObject
 @property(nonatomic, strong, readwrite) NSNumber *createTime;
 @property(nonatomic, assign, readwrite) CGFloat videoDuration;
@@ -122,6 +127,7 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, strong) AWEUserModel *author;
 @property(nonatomic, strong) AWEAnimatedImageVideoInfo *animatedImageVideoInfo;
 @property(nonatomic, strong) AWEAwemeStatisticsModel *statistics;
+@property(nonatomic, strong) AWEPropGuideV2Model *propGuideV2;
 - (BOOL)isLive;
 - (AWESearchAwemeExtraModel *)searchExtraModel;
 @end
@@ -1204,4 +1210,26 @@ static CGFloat gStartVal = 0.0;
 
 @interface AWEFeedTemplateAnchorView : UIView
 @property(retain, nonatomic) AWECodeGenCommonAnchorBasicInfoModel *templateAnchorInfo;
+@end
+
+@interface AWEVideoPlayerConfiguration : NSObject
++ (void)setHDRBrightnessStrategy:(id)strategy;
++ (double)getHDRBrightnessOffset:(double)offset brightness:(double)brightness;
+@end
+
+@interface IESFiltersManager : NSObject
+- (void)setHDRIndensity:(double)intensity;
+@end
+
+@interface AWEFeedPauseVideoRelatedWordView : UIView
+@end
+
+@interface AWEFeedPauseRelatedWordComponent : NSObject
+@property (nonatomic, strong) AWEFeedPauseVideoRelatedWordView *relatedView;
+@property (nonatomic, strong) AWEAwemeModel *currentAweme;
+@property (nonatomic, assign) long long pauseContentNum;
+
+@end
+
+@interface YYAnimatedImageView : UIImageView
 @end
