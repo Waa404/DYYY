@@ -18,6 +18,45 @@
 #import "DYYYToast.h"
 #import "DYYYUtils.h"
 
+// 长按复制个人简介
+%hook AWEProfileMentionLabel
+
+- (void)layoutSubviews {
+    %orig;
+    
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYBioCopyText"]) {
+        return;
+    }
+    
+    BOOL hasLongPressGesture = NO;
+    for (UIGestureRecognizer *gesture in self.gestureRecognizers) {
+        if ([gesture isKindOfClass:[UILongPressGestureRecognizer class]]) {
+            hasLongPressGesture = YES;
+            break;
+        }
+    }
+    
+    if (!hasLongPressGesture) {
+        UILongPressGestureRecognizer *longPressGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
+        longPressGesture.minimumPressDuration = 0.5;
+        [self addGestureRecognizer:longPressGesture];
+        self.userInteractionEnabled = YES;
+    }
+}
+
+%new
+- (void)handleLongPress:(UILongPressGestureRecognizer *)gesture {
+    if (gesture.state == UIGestureRecognizerStateBegan) {
+        NSString *bioText = self.text;
+        if (bioText && bioText.length > 0) {
+            [[UIPasteboard generalPasteboard] setString:bioText];
+            [DYYYToast showSuccessToastWithMessage:@"个人简介已复制"];
+        }
+    }
+}
+
+%end
+
 // 默认视频流最高画质
 %hook AWEVideoModel
 
@@ -442,7 +481,7 @@
 			timer = nil;
 		}
 		void (^tryFindAndSetPureMode)(void) = ^{
-		  UIWindow *keyWindow = [DYYYManager getActiveWindow];
+		  UIWindow *keyWindow = [DYYYUtils  getActiveWindow];
 		  if (keyWindow && keyWindow.rootViewController) {
 			  UIViewController *feedVC = [self findViewController:keyWindow.rootViewController ofClass:NSClassFromString(@"AWEFeedTableViewController")];
 			  if (feedVC) {
@@ -800,7 +839,7 @@
 			}
 		}
 
-		BOOL isDarkMode = [DYYYManager isDarkMode];
+		BOOL isDarkMode = [DYYYUtils isDarkMode];
 
 		UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
 
@@ -1505,7 +1544,7 @@ static CGFloat rightLabelRightMargin = -1;
 	} else {
 		NSString *labelColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
 		if (labelColor.length > 0) {
-			label.textColor = [DYYYManager colorWithHexString:labelColor];
+			label.textColor = [DYYYUtils colorWithHexString:labelColor];
 		}
 	}
 	return label;
@@ -1805,7 +1844,7 @@ static CGFloat rightLabelRightMargin = -1;
 		}
 	}
 
-	BOOL isDarkMode = [DYYYManager isDarkMode];
+	BOOL isDarkMode = [DYYYUtils isDarkMode];
 	UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
 	UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
 	UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
@@ -2013,7 +2052,7 @@ static CGFloat rightLabelRightMargin = -1;
 %hook AWELongPressPanelABSettings
 + (NSUInteger)modernLongPressPanelStyleMode {
 	if (DYYYGetBool(@"DYYYModernPanelFollowSystem")) {
-		BOOL isDarkMode = [DYYYManager isDarkMode];
+		BOOL isDarkMode = [DYYYUtils isDarkMode];
 		return isDarkMode ? 1 : 2;
 	} else if (DYYYGetBool(@"DYYYisEnableModernLight")) {
 		return 2;
@@ -2027,7 +2066,7 @@ static CGFloat rightLabelRightMargin = -1;
 %hook AWEModernLongPressPanelUIConfig
 + (NSUInteger)modernLongPressPanelStyleMode {
 	if (DYYYGetBool(@"DYYYModernPanelFollowSystem")) {
-		BOOL isDarkMode = [DYYYManager isDarkMode];
+		BOOL isDarkMode = [DYYYUtils isDarkMode];
 		return isDarkMode ? 1 : 2;
 	} else if (DYYYGetBool(@"DYYYisEnableModernLight")) {
 		return 2;
@@ -2307,9 +2346,9 @@ static __weak YYAnimatedImageView *targetStickerView = nil;
 								       handler:^(__kindof UIAction *_Nonnull action) {
 									 // 使用全局变量 targetStickerView 保存当前长按的表情
 									 if (targetStickerView) {
-										 [DYYYUtils saveAnimatedSticker:targetStickerView];
+										 [DYYYManager saveAnimatedSticker:targetStickerView];
 									 } else {
-										 [DYYYManager showToast:@"无法获取表情视图"];
+										 [DYYYUtils  showToast:@"无法获取表情视图"];
 									 }
 								       }];
 
@@ -2365,7 +2404,7 @@ static __weak YYAnimatedImageView *targetStickerView = nil;
 	// 获取表情包URL
 	AWEIMEmoticonModel *emoticonModel = self.model;
 	if (!emoticonModel) {
-		[DYYYManager showToast:@"无法获取表情包信息"];
+		[DYYYUtils showToast:@"无法获取表情包信息"];
 		return;
 	}
 
@@ -2389,7 +2428,7 @@ static __weak YYAnimatedImageView *targetStickerView = nil;
 	}
 
 	if (!urlString) {
-		[DYYYManager showToast:@"无法获取表情包链接"];
+		[DYYYUtils showToast:@"无法获取表情包链接"];
 		return;
 	}
 
@@ -3761,11 +3800,8 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideRecommendTips"]) {
-		UIView *parentView = self.superview;
-		if (parentView) {
-			parentView.hidden = YES;
-		} else {
-			self.hidden = YES;
+		if(self.accessibilityLabel) {
+			[self removeFromSuperview];
 		}
 	}
 }
@@ -4638,11 +4674,11 @@ static AWEIMReusableCommonCell *currentCell;
 									      completion:^(BOOL success) {
 										if (success) {
 										} else {
-											[DYYYManager showToast:@"图片保存已取消"];
+											[DYYYUtils showToast:@"图片保存已取消"];
 										}
 									      }];
 						      } else {
-							      [DYYYManager showToast:@"没有找到合适格式的图片"];
+							      [DYYYUtils showToast:@"没有找到合适格式的图片"];
 						      }
 					      }
 				      } else if (isNewLivePhoto) {
@@ -4759,7 +4795,7 @@ static AWEIMReusableCommonCell *currentCell;
 					      }
 
 					      if (livePhotos.count == 0 && imageURLs.count == 0) {
-						      [DYYYManager showToast:@"没有找到合适格式的图片"];
+						      [DYYYUtils showToast:@"没有找到合适格式的图片"];
 					      }
 					    }];
 				[actions addObject:downloadAllAction];
@@ -4790,7 +4826,7 @@ static AWEIMReusableCommonCell *currentCell;
 															  handler:^{
 															    NSString *shareLink = [awemeModel valueForKey:@"shareURL"];
 															    if (shareLink.length == 0) {
-																    [DYYYManager showToast:@"无法获取分享链接"];
+																    [DYYYUtils showToast:@"无法获取分享链接"];
 																    return;
 															    }
 
@@ -4859,7 +4895,7 @@ static AWEIMReusableCommonCell *currentCell;
 						  completion:^(BOOL success, NSString *message) {
 						    if (success) {
 						    } else {
-							    [DYYYManager showToast:[NSString stringWithFormat:@"视频制作失败: %@", message]];
+							    [DYYYUtils showToast:[NSString stringWithFormat:@"视频制作失败: %@", message]];
 						    }
 						  }];
 					    }];
@@ -4941,7 +4977,7 @@ static AWEIMReusableCommonCell *currentCell;
 
 %new
 - (void)updateDarkModeAppearance {
-	BOOL isDarkMode = [DYYYManager isDarkMode];
+	BOOL isDarkMode = [DYYYUtils isDarkMode];
 
 	UIView *contentView = self.view.subviews.count > 1 ? self.view.subviews[1] : nil;
 	if (contentView) {
@@ -5014,13 +5050,13 @@ static AWEIMReusableCommonCell *currentCell;
 	%orig;
 
 	if (newWindow) {
-		BOOL isDarkMode = [DYYYManager isDarkMode];
+		BOOL isDarkMode = [DYYYUtils isDarkMode];
 		self.keyboardAppearance = isDarkMode ? UIKeyboardAppearanceDark : UIKeyboardAppearanceLight;
 	}
 }
 
 - (BOOL)becomeFirstResponder {
-	BOOL isDarkMode = [DYYYManager isDarkMode];
+	BOOL isDarkMode = [DYYYUtils isDarkMode];
 	self.keyboardAppearance = isDarkMode ? UIKeyboardAppearanceDark : UIKeyboardAppearanceLight;
 	return %orig;
 }
@@ -5033,13 +5069,13 @@ static AWEIMReusableCommonCell *currentCell;
 	%orig;
 
 	if (newWindow) {
-		BOOL isDarkMode = [DYYYManager isDarkMode];
+		BOOL isDarkMode = [DYYYUtils isDarkMode];
 		self.keyboardAppearance = isDarkMode ? UIKeyboardAppearanceDark : UIKeyboardAppearanceLight;
 	}
 }
 
 - (BOOL)becomeFirstResponder {
-	BOOL isDarkMode = [DYYYManager isDarkMode];
+	BOOL isDarkMode = [DYYYUtils isDarkMode];
 	self.keyboardAppearance = isDarkMode ? UIKeyboardAppearanceDark : UIKeyboardAppearanceLight;
 	return %orig;
 }
@@ -5063,7 +5099,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		}
 	}
 
-	BOOL isDarkMode = [DYYYManager isDarkMode];
+	BOOL isDarkMode = [DYYYUtils isDarkMode];
 	UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
 
 	if (transparency <= 0 || transparency > 1) {

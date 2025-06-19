@@ -1,6 +1,6 @@
 #import "AwemeHeaders.h"
 #import "DYYYFloatSpeedButton.h"
-#import "DYYYManager.h"
+#import "DYYYUtils.h"
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
 
@@ -12,7 +12,6 @@ static BOOL showSpeedX = NO;
 static CGFloat speedButtonSize = 32.0;
 static BOOL isFloatSpeedButtonEnabled = NO;
 static BOOL isForceHidden = NO;
-static BOOL isAppActive = YES;
 static BOOL isInteractionViewVisible = NO;
 
 NSArray *getSpeedOptions() {
@@ -116,7 +115,7 @@ void toggleSpeedButtonVisibility(void) {
 }
 
 void updateSpeedButtonVisibility() {
-    if (!speedButton || !isFloatSpeedButtonEnabled || !isAppActive)
+    if (!speedButton || !isFloatSpeedButtonEnabled)
         return;
     
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -253,7 +252,7 @@ void updateSpeedButtonVisibility() {
 	self.justToggledLock = YES;
 
 	NSString *toastMessage = self.isLocked ? @"按钮已锁定" : @"按钮已解锁";
-	[DYYYManager showToast:toastMessage];
+	[DYYYUtils showToast:toastMessage];
 
 	if (self.isLocked) {
 		[self saveButtonPosition];
@@ -469,20 +468,9 @@ void updateSpeedButtonVisibility() {
 
 %hook AWECommentContainerViewController
 
-- (void)viewWillAppear:(BOOL)animated {
-    %orig;
-    isCommentViewVisible = YES;
-    updateSpeedButtonVisibility();
-}
-
 - (void)viewDidAppear:(BOOL)animated {
     %orig;
     isCommentViewVisible = YES;
-    updateSpeedButtonVisibility();
-}
-
-- (void)viewWillDisappear:(BOOL)animated {
-    %orig;
     updateSpeedButtonVisibility();
 }
 
@@ -627,7 +615,7 @@ void updateSpeedButtonVisibility() {
 	}
 
 	if (!speedApplied) {
-		[DYYYManager showToast:@"无法找到视频控制器"];
+		[DYYYUtils showToast:@"无法找到视频控制器"];
 	}
 }
 
@@ -663,7 +651,6 @@ void updateSpeedButtonVisibility() {
 		dispatch_async(dispatch_get_main_queue(), ^{
 		  [self addSubview:speedButton];
 		  [speedButton loadSavedPosition];
-		  updateSpeedButtonVisibility();
 		});
 	}
 }
