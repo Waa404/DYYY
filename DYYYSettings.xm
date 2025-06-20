@@ -2403,12 +2403,17 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_personcircleclean_outlined_20"},
 		  @{@"identifier" : @"DYYYCommentCopyText",
-		    @"title" : @"长按评论复制文案",
+		    @"title" : @"长按评论复制评论",
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_at_outlined_20"},
 		  @{@"identifier" : @"DYYYBioCopyText",
-		    @"title" : @"长按简介复制文案",
+		    @"title" : @"长按简介复制简介",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_rectangleonrectangleup_outlined_20"},
+		  @{@"identifier" : @"DYYYLongPressCopyTextEnabled",
+		    @"title" : @"长按文案复制文案",
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_rectangleonrectangleup_outlined_20"},
@@ -3164,48 +3169,44 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	AWESettingItemModel *cleanCacheItem = [[%c(AWESettingItemModel) alloc] init];
 	cleanCacheItem.identifier = @"DYYYCleanCache";
 	cleanCacheItem.title = @"清理缓存";
-	cleanCacheItem.detail = @"";
 	cleanCacheItem.type = 0;
 	cleanCacheItem.svgIconImageName = @"ic_broom_outlined";
 	cleanCacheItem.cellType = 26;
 	cleanCacheItem.colorStyle = 0;
 	cleanCacheItem.isEnable = YES;
 	cleanCacheItem.cellTappedBlock = ^{
-	  [DYYYBottomAlertView showAlertWithTitle:@"清理缓存"
-					  message:@"确定要清理缓存吗？\n这将删除临时文件和缓存"
-					avatarURL:nil
-				 cancelButtonText:@"取消"
-				confirmButtonText:@"确定"
-				     cancelAction:nil
-				      closeAction:nil
-				    confirmAction:^{
-				      NSFileManager *fileManager = [NSFileManager defaultManager];
-				      NSUInteger totalSize = 0;
+	  NSString *tempDir = NSTemporaryDirectory();
+	  NSArray<NSString *> *customDirs = @[ @"Caches", @"BDByteCast", @"kitelog" ];
+	  NSString *libraryDir = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES).firstObject;
+	  NSMutableArray<NSString *> *allPaths = [NSMutableArray arrayWithObject:tempDir];
+	  for (NSString *sub in customDirs) {
+		  NSString *fullPath = [libraryDir stringByAppendingPathComponent:sub];
+		  if ([[NSFileManager defaultManager] fileExistsAtPath:fullPath]) {
+			  [allPaths addObject:fullPath];
+		  }
+	  }
 
-				      // 临时目录
-				      NSString *tempDir = NSTemporaryDirectory();
+	  unsigned long long beforeSize = 0;
+	  for (NSString *basePath in allPaths) {
+		  beforeSize += [DYYYUtils directorySizeAtPath:basePath];
+	  }
+	  float beforeMB = beforeSize / 1024.0 / 1024.0;
+	  cleanCacheItem.detail = [NSString stringWithFormat:@"%.2f MB", beforeMB];
+	  [DYYYSettingsHelper refreshTableView];
 
-				      // Library目录下的缓存目录
-				      NSArray<NSString *> *customDirs = @[ @"Caches", @"BDByteCast", @"kitelog" ];
-				      NSString *libraryDir = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES).firstObject;
+	  for (NSString *basePath in allPaths) {
+		  [DYYYUtils removeAllContentsAtPath:basePath];
+	  }
 
-				      NSMutableArray<NSString *> *allPaths = [NSMutableArray arrayWithObject:tempDir];
-				      for (NSString *sub in customDirs) {
-					      NSString *fullPath = [libraryDir stringByAppendingPathComponent:sub];
-					      if ([fileManager fileExistsAtPath:fullPath]) {
-						      [allPaths addObject:fullPath];
-					      }
-				      }
-
-				      // 遍历所有目录并清理
-				      for (NSString *basePath in allPaths) {
-					      totalSize += [DYYYUtils clearDirectoryContents:basePath];
-				      }
-
-				      float sizeInMB = totalSize / 1024.0 / 1024.0;
-				      NSString *toastMsg = [NSString stringWithFormat:@"已清理 %.2f MB 的缓存", sizeInMB];
-				      [DYYYUtils showToast:toastMsg];
-				    }];
+	  unsigned long long afterSize = 0;
+	  for (NSString *basePath in allPaths) {
+		  afterSize += [DYYYUtils directorySizeAtPath:basePath];
+	  }
+	  float afterMB = afterSize / 1024.0 / 1024.0;
+	  float clearedMB = beforeMB - afterMB;
+	  if (clearedMB < 0)
+		  clearedMB = 0;
+	  [DYYYUtils showToast:[NSString stringWithFormat:@"已清理 %.2f MB 缓存", clearedMB]];
 	};
 	[cleanupItems addObject:cleanCacheItem];
 
